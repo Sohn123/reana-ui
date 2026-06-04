@@ -9,7 +9,6 @@
 */
 
 import PropTypes from "prop-types";
-import { useEffect, useState } from "react";
 import { Checkbox, Dropdown, Grid } from "semantic-ui-react";
 import { WORKFLOW_STATUSES } from "~/config";
 import { statusMapping } from "~/util";
@@ -27,23 +26,11 @@ const statusOptions = WORKFLOW_STATUSES.filter((s) => s !== "deleted").map(
 export default function WorkflowStatusFilters({
   statusFilter,
   filter,
-  showDeleted,
-  setShowDeleted,
-  statusExplicit,
+  includeDeleted,
+  setIncludeDeleted,
+  hasStatusFilter,
 }) {
-  const [value, setValue] = useState(statusExplicit ? statusFilter : undefined);
-
-  useEffect(() => {
-    setValue(statusExplicit ? statusFilter : undefined);
-  }, [statusFilter, statusExplicit]);
-
-  // If URL  contains ?status=deleted, remove param
-  useEffect(() => {
-    if (statusExplicit && statusFilter === "deleted") {
-      setValue(undefined);
-      filter(undefined);
-    }
-  }, [statusExplicit, statusFilter, filter]);
+  const value = hasStatusFilter ? statusFilter : undefined;
 
   return (
     <>
@@ -56,7 +43,6 @@ export default function WorkflowStatusFilters({
           options={statusOptions}
           onChange={(_, { value: next }) => {
             const normalized = next || undefined;
-            setValue(normalized);
             filter(normalized);
           }}
           value={value ?? null}
@@ -71,8 +57,8 @@ export default function WorkflowStatusFilters({
         <Checkbox
           toggle
           label="Show deleted runs"
-          onChange={(_, { checked }) => setShowDeleted(checked)}
-          checked={showDeleted}
+          onChange={(_, { checked }) => setIncludeDeleted(checked)}
+          checked={includeDeleted}
         />
       </Grid.Column>
     </>
@@ -82,7 +68,7 @@ export default function WorkflowStatusFilters({
 WorkflowStatusFilters.propTypes = {
   statusFilter: PropTypes.string,
   filter: PropTypes.func.isRequired,
-  showDeleted: PropTypes.bool.isRequired,
-  setShowDeleted: PropTypes.func.isRequired,
-  statusExplicit: PropTypes.bool.isRequired,
+  includeDeleted: PropTypes.bool.isRequired,
+  setIncludeDeleted: PropTypes.func.isRequired,
+  hasStatusFilter: PropTypes.bool.isRequired,
 };
