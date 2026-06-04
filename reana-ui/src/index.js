@@ -15,7 +15,7 @@ import client from "~/client";
 import { loadUser, loadConfig, USER_SIGNEDOUT } from "~/actions";
 import App from "./components/App";
 
-import "semantic-ui-less/semantic.less";
+import "semantic-ui-css/semantic.min.css";
 
 client.setOnUnauthorized(() => {
   store.dispatch({ type: USER_SIGNEDOUT });
