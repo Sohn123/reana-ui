@@ -8,6 +8,7 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
+import React from "react";
 import isEmpty from "lodash/isEmpty";
 import {
   Navigate,
@@ -42,7 +43,11 @@ import Error from "./Error";
 import "./App.module.scss";
 import LauncherBadgeCreator from "~/pages/badgeCreator/LauncherBadgeCreator";
 
-function RequireAuth({ children }) {
+interface RequireAuthProps {
+  children: React.ReactNode;
+}
+
+function RequireAuth({ children }: RequireAuthProps) {
   const signedIn = useSelector(isSignedIn);
   const location = useLocation();
   if (signedIn) {

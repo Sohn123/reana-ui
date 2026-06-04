@@ -29,13 +29,21 @@ import {
 const MAX_RUN_LABELS_SHOWN = 6;
 const DELETE_RETRY_ATTEMPTS = 2;
 
-const getErrorMessage = (err) =>
-  err?.response?.data?.message ||
-  err?.response?.data?.error ||
-  err?.message ||
+const getErrorMessage = (err: unknown): string =>
+  (err as any)?.response?.data?.message ||
+  (err as any)?.response?.data?.error ||
+  (err as any)?.message ||
   String(err);
 
-function DeleteWarningMessage({ sizeHumanReadable, hasRelatedRuns }) {
+interface DeleteWarningMessageProps {
+  sizeHumanReadable?: string;
+  hasRelatedRuns: boolean;
+}
+
+function DeleteWarningMessage({
+  sizeHumanReadable,
+  hasRelatedRuns,
+}: DeleteWarningMessageProps) {
   return (
     <Message icon warning>
       <Icon name="warning circle" />
@@ -59,8 +67,25 @@ function DeleteWarningMessage({ sizeHumanReadable, hasRelatedRuns }) {
   );
 }
 
-function useWorkflowRuns({ open, name, run }) {
-  const [state, setState] = useState({
+interface UseWorkflowRunsParams {
+  open: boolean;
+  name?: string;
+  run?: string | number | null;
+}
+
+interface WorkflowRunsState {
+  total: number | null;
+  items: any[];
+  relatedIds: string[];
+  loading: boolean;
+}
+
+function useWorkflowRuns({
+  open,
+  name,
+  run,
+}: UseWorkflowRunsParams): WorkflowRunsState {
+  const [state, setState] = useState<WorkflowRunsState>({
     total: null,
     items: [],
     relatedIds: [],
@@ -114,7 +139,9 @@ function useWorkflowRuns({ open, name, run }) {
 // helloworld-demo.1   -> helloworld-demo.1
 // helloworld-demo.1.1 -> helloworld-demo.1
 // helloworld-demo.1.2 -> helloworld-demo.1
-const getWorkspaceGroup = (fullName) => {
+const getWorkspaceGroup = (
+  fullName: string | null | undefined,
+): string | null => {
   if (!fullName) return null;
   const parts = String(fullName).split(".");
   let i = parts.length - 1;
@@ -129,7 +156,7 @@ const getWorkspaceGroup = (fullName) => {
 // Examples:
 // helloworld-demo.7   -> #7
 // helloworld-demo.7.1 -> #7.1
-const formatRunLabel = (fullName) => {
+const formatRunLabel = (fullName: string | null | undefined): string => {
   if (!fullName) return "";
   const parts = String(fullName).split(".");
   let i = parts.length - 1;
@@ -138,7 +165,10 @@ const formatRunLabel = (fullName) => {
   return numeric ? `#${numeric}` : String(fullName);
 };
 
-const formatRunList = (labels, max = MAX_RUN_LABELS_SHOWN) => {
+const formatRunList = (
+  labels: string[] | null | undefined,
+  max: number = MAX_RUN_LABELS_SHOWN,
+): string => {
   const xs = (labels || []).filter(Boolean);
   if (!xs.length) return "";
   const shown = xs.slice(0, max);
@@ -146,7 +176,11 @@ const formatRunList = (labels, max = MAX_RUN_LABELS_SHOWN) => {
   return more > 0 ? `${shown.join(", ")}, +${more} more` : shown.join(", ");
 };
 
-const deleteRunWithRetry = async (dispatch, workflowId, options) => {
+const deleteRunWithRetry = async (
+  dispatch: any,
+  workflowId: string,
+  options: any,
+): Promise<void> => {
   let lastError = null;
 
   for (let attempt = 1; attempt <= DELETE_RETRY_ATTEMPTS; attempt += 1) {
@@ -171,7 +205,7 @@ export default function WorkflowDeleteModal() {
   const [deleteError, setDeleteError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { id, name, run, size } = workflow ?? {};
+  const { id, name, run, size } = (workflow ?? {}) as any;
   const {
     total: allRunsTotal,
     items: allRunItems,
@@ -239,14 +273,14 @@ export default function WorkflowDeleteModal() {
     runLabel,
   ]);
 
-  const onToggleAllRuns = useCallback((_, data) => {
+  const onToggleAllRuns = useCallback((_: any, data: { checked?: boolean }) => {
     const checked = Boolean(data.checked);
     setAllRuns(checked);
     // If user opts to delete all runs, related runs are necessarily deleted too
     if (checked) setConfirmRelatedDeletion(true);
   }, []);
 
-  const onDelete = useCallback(async () => {
+  const onDelete = useCallback(async (): Promise<void> => {
     if (!id || isDeleting) return;
     setDeleteError(null);
     setIsDeleting(true);

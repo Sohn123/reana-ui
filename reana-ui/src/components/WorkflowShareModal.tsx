@@ -8,7 +8,7 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import SemanticDatepicker from "react-semantic-ui-datepickers";
 import {
@@ -35,11 +35,17 @@ import {
 
 import styles from "./WorkflowShareModal.module.scss";
 
+interface WorkflowShareStatusProps {
+  workflow: any;
+  handleUnshareWorkflowSuccess: (userEmail: string) => void;
+  handleUnshareWorkflowError: (errorMessage: string) => void;
+}
+
 function WorkflowShareStatus({
   workflow,
   handleUnshareWorkflowSuccess,
   handleUnshareWorkflowError,
-}) {
+}: WorkflowShareStatusProps) {
   const dispatch = useDispatch();
   const loadingWorkflowShareStatus = useSelector(getLoadingWorkflowShareStatus);
   const workflowShareStatus = useSelector(getWorkflowShareStatus(workflow?.id));
@@ -161,20 +167,32 @@ function WorkflowShareStatus({
   );
 }
 
+interface SharingResult {
+  usersSharedWith?: string[];
+  usersNotSharedWith?: Array<{
+    userEmailToShareWith: string;
+    errorMessage: string;
+  }>;
+  userUnsharedWith?: string;
+  unshareError?: string;
+}
+
 export default function WorkflowShareModal() {
   const dispatch = useDispatch();
   const open = useSelector(getWorkflowShareModalOpen);
   const workflow = useSelector(getWorkflowShareModalItem);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [dropDownOptions, setDropDownOptions] = useState([]);
-  const [usersToShareWith, setUsersToShareWith] = useState([]);
-  const [message, setMessage] = useState("");
+  const [dropDownOptions, setDropDownOptions] = useState<
+    Array<{ text: string; value: string }>
+  >([]);
+  const [usersToShareWith, setUsersToShareWith] = useState<string[]>([]);
+  const [message, setMessage] = useState<string>("");
   const [expirationModalOpen, setExpirationModalOpen] = useState(false);
-  const [expirationDate, setExpirationDate] = useState(null);
+  const [expirationDate, setExpirationDate] = useState<Date | null>(null);
   const [neverExpires, setNeverExpires] = useState(true);
 
   const [loadingShareWorkflow, setLoadingShareWorkflow] = useState(false);
-  const [lastSharingAction, setLastSharingAction] = useState({});
+  const [lastSharingAction, setLastSharingAction] = useState<SharingResult>({});
 
   const resetShareForm = useCallback(() => {
     setUsersToShareWith([]);
@@ -213,14 +231,20 @@ export default function WorkflowShareModal() {
     }, 3000);
   };
 
-  const handleAddition = (e, { value }) => {
+  const handleAddition = (
+    e: React.SyntheticEvent,
+    { value }: { value: string },
+  ) => {
     setDropDownOptions((prevOptions) => [
       { text: value, value },
       ...prevOptions,
     ]);
   };
 
-  const handleChange = (e, { value }) => {
+  const handleChange = (
+    e: React.SyntheticEvent,
+    { value }: { value: string[] },
+  ) => {
     setUsersToShareWith(value);
   };
 
@@ -232,7 +256,8 @@ export default function WorkflowShareModal() {
     setExpirationModalOpen(false);
   };
 
-  const handleChangeExpirationDate = (_, data) => setExpirationDate(data.value);
+  const handleChangeExpirationDate = (_: any, data: { value: Date | null }) =>
+    setExpirationDate(data.value);
 
   const handleSetExpirationDate = () => {
     if (neverExpires || !expirationDate) {

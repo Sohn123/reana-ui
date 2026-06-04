@@ -20,9 +20,9 @@ import NotificationBell from "./NotificationBell";
 import styles from "./TopHeader.module.scss";
 
 export default function TopHeader() {
-  const dispatch = useDispatch();
-  const email = useSelector(getUserEmail);
-  const signOut = () => dispatch(userSignout());
+  const dispatch: any = useDispatch();
+  const email: string = useSelector(getUserEmail) as string;
+  const signOut: () => void = () => dispatch(userSignout());
 
   return (
     <header className={styles["top-header"]}>

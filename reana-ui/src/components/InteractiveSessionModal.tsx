@@ -33,31 +33,33 @@ import {
 const EnvironmentType = {
   Recommended: "recommended",
   Custom: "custom",
-};
+} as const;
+type EnvironmentTypeValue =
+  (typeof EnvironmentType)[keyof typeof EnvironmentType];
 
 export default function InteractiveSessionModal() {
   const dispatch = useDispatch();
   const open = useSelector(getInteractiveSessionModalOpen);
   const workflow = useSelector(getInteractiveSessionModalItem);
 
-  const config = useSelector(getConfig);
-  const environments = config.interactiveSessions.environments;
-  const allSessionTypes = useMemo(
+  const config: any = useSelector(getConfig);
+  const environments: any = config.interactiveSessions.environments;
+  const allSessionTypes: string[] = useMemo(
     () => Object.keys(environments).sort(),
     [environments],
   );
 
-  const [sessionType, setSessionType] = useState(null);
-  const [environmentType, setEnvironmentType] = useState(
+  const [sessionType, setSessionType] = useState<string | null>(null);
+  const [environmentType, setEnvironmentType] = useState<EnvironmentTypeValue>(
     EnvironmentType.Recommended,
   );
-  const [recommendedImage, setRecommendedImage] = useState(null);
-  const [customImage, setCustomImage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [recommendedImage, setRecommendedImage] = useState<string | null>(null);
+  const [customImage, setCustomImage] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const resetForm = useCallback(
-    (newSessionType = null) => {
+    (newSessionType: string | null | undefined = null): void => {
       if (!newSessionType) {
         // get default session type
         newSessionType = allSessionTypes.at(0);
@@ -115,24 +117,30 @@ export default function InteractiveSessionModal() {
     );
   }
 
-  const sessionTypeOptions = allSessionTypes.map((type) => ({
+  const sessionTypeOptions: Array<{
+    key: string;
+    text: string;
+    value: string;
+  }> = allSessionTypes.map((type) => ({
     key: type,
     text: type,
     value: type,
   }));
 
-  const recommendedImageOptions = environments[sessionType].recommended.map(
-    (recommended) => ({
-      key: recommended.image,
-      text: recommended.name ?? recommended.image,
-      value: recommended.image,
-    }),
-  );
+  const recommendedImageOptions: Array<{
+    key: string;
+    text: string;
+    value: string;
+  }> = environments[sessionType].recommended.map((recommended: any) => ({
+    key: recommended.image,
+    text: recommended.name ?? recommended.image,
+    value: recommended.image,
+  }));
 
   const isCustomAllowed = environments[sessionType].allowCustom;
 
   const checkFields = () => {
-    const errors = {};
+    const errors: Record<string, string> = {};
     if (environmentType === EnvironmentType.Custom && !customImage) {
       errors.customImage = "Please provide a custom image";
     }

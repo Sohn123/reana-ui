@@ -24,11 +24,12 @@ export default function WorkflowStopModal() {
 
   if (!workflow) return null;
 
-  const onCloseModal = () => {
+  const onCloseModal = (): void => {
     dispatch(closeStopWorkflowModal());
   };
 
-  const { id, name, run } = workflow;
+  const { id, name, run }: { id: string; name: string; run: string | number } =
+    workflow;
   return (
     <Modal open={open} onClose={onCloseModal} closeIcon size="small">
       <Modal.Header>Stop workflow</Modal.Header>

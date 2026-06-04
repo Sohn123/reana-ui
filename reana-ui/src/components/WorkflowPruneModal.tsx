@@ -23,10 +23,10 @@ export default function WorkflowPruneModal() {
   const open = useSelector(getWorkflowPruneModalOpen);
   const workflow = useSelector(getWorkflowPruneModalItem);
 
-  const [includeInputs, setIncludeInputs] = useState(false);
-  const [includeOutputs, setIncludeOutputs] = useState(false);
+  const [includeInputs, setIncludeInputs] = useState<boolean>(false);
+  const [includeOutputs, setIncludeOutputs] = useState<boolean>(false);
 
-  const { id, name, run, size } = workflow ?? {};
+  const { id, name, run, size } = (workflow ?? {}) as any;
 
   useEffect(() => {
     // reset local state on workflow change
@@ -36,7 +36,7 @@ export default function WorkflowPruneModal() {
 
   if (!workflow) return null;
 
-  const onCloseModal = () => {
+  const onCloseModal = (): void => {
     dispatch(closePruneWorkflowModal());
   };
 
@@ -58,13 +58,17 @@ export default function WorkflowPruneModal() {
 
         <Checkbox
           label={<label>Also delete workflow inputs</label>}
-          onChange={(e, data) => setIncludeInputs(data.checked)}
+          onChange={(e: React.FormEvent, data: { checked?: boolean }) =>
+            setIncludeInputs(data.checked ?? false)
+          }
           checked={includeInputs}
         />
         <div style={{ height: "0.75rem" }} />
         <Checkbox
           label={<label>Also delete workflow outputs</label>}
-          onChange={(e, data) => setIncludeOutputs(data.checked)}
+          onChange={(e: React.FormEvent, data: { checked?: boolean }) =>
+            setIncludeOutputs(data.checked ?? false)
+          }
           checked={includeOutputs}
         />
       </Modal.Content>

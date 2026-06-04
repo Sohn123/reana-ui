@@ -8,7 +8,6 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import PropTypes from "prop-types";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Icon, Menu, Popup } from "semantic-ui-react";
@@ -22,33 +21,44 @@ import {
   openShareWorkflowModal,
   openStopWorkflowModal,
 } from "~/actions";
-import { workflowShape } from "~/props";
 import { getUserEmail } from "~/selectors";
 
 import { JupyterNotebookIcon } from "~/components";
 
 import styles from "./WorkflowActionsPopup.module.scss";
+import { ParsedWorkflow } from "~/util";
+
+interface Props {
+  workflow: ParsedWorkflow;
+  className?: string;
+}
 
 const JupyterIcon = <JupyterNotebookIcon className={styles["jupyter-icon"]} />;
 
-export default function WorkflowActionsPopup({ workflow, className }) {
-  const dispatch = useDispatch();
+export default function WorkflowActionsPopup({
+  workflow,
+  className = "",
+}: Props) {
+  const dispatch: any = useDispatch();
   const [open, setOpen] = useState(false);
-  const userEmail = useSelector(getUserEmail);
-  const { id, size, status, session_status: sessionStatus } = workflow;
+  const userEmail: any = useSelector(getUserEmail);
+  const { id, status } = workflow;
+  const size = workflow.size as { raw: number } | undefined;
+  const sessionStatus = workflow.session_status as string | undefined;
   const isDeleted = status === "deleted";
-  const isDeletedUsingWorkspace = isDeleted && size.raw > 0;
+  const isDeletedUsingWorkspace =
+    isDeleted && size !== undefined && size.raw > 0;
   const isRunning = status === "running";
   const isSessionOpen = sessionStatus === "running";
 
-  let menuItems = [];
+  let menuItems: any[] = [];
 
   if (!isDeleted && !isSessionOpen) {
     menuItems.push({
       key: "openNotebook",
       content: "Open Jupyter Notebook",
       icon: JupyterIcon,
-      onClick: (e) => {
+      onClick: (e: React.MouseEvent) => {
         dispatch(openInteractiveSessionModal(workflow));
         setOpen(false);
       },
@@ -59,7 +69,7 @@ export default function WorkflowActionsPopup({ workflow, className }) {
     key: "share",
     content: "Share workflow",
     icon: "share alternate",
-    onClick: (e) => {
+    onClick: (e: React.MouseEvent) => {
       dispatch(openShareWorkflowModal(workflow));
       setOpen(false);
     },
@@ -70,7 +80,7 @@ export default function WorkflowActionsPopup({ workflow, className }) {
       key: "closeNotebook",
       content: "Close Jupyter Notebook",
       icon: JupyterIcon,
-      onClick: (e) => {
+      onClick: (e: React.MouseEvent) => {
         dispatch(closeInteractiveSession(id));
         setOpen(false);
       },
@@ -82,7 +92,7 @@ export default function WorkflowActionsPopup({ workflow, className }) {
       key: "stop",
       content: "Stop workflow",
       icon: "stop",
-      onClick: (e) => {
+      onClick: (e: React.MouseEvent) => {
         dispatch(openStopWorkflowModal(workflow));
         setOpen(false);
       },
@@ -94,7 +104,7 @@ export default function WorkflowActionsPopup({ workflow, className }) {
       key: "prune",
       content: "Prune workspace",
       icon: "filter",
-      onClick: (e) => {
+      onClick: (e: React.MouseEvent) => {
         dispatch(openPruneWorkflowModal(workflow));
         setOpen(false);
       },
@@ -106,7 +116,7 @@ export default function WorkflowActionsPopup({ workflow, className }) {
       key: "delete",
       content: "Delete workflow",
       icon: "trash",
-      onClick: (e) => {
+      onClick: (e: React.MouseEvent) => {
         dispatch(openDeleteWorkflowModal(workflow));
         setOpen(false);
       },
@@ -118,7 +128,7 @@ export default function WorkflowActionsPopup({ workflow, className }) {
       key: "freeup",
       content: "Free up disk",
       icon: "hdd",
-      onClick: (e) => {
+      onClick: (e: React.MouseEvent) => {
         dispatch(deleteWorkflow(id));
         setOpen(false);
       },
@@ -151,12 +161,3 @@ export default function WorkflowActionsPopup({ workflow, className }) {
     </div>
   );
 }
-
-WorkflowActionsPopup.defaultProps = {
-  className: "",
-};
-
-WorkflowActionsPopup.propTypes = {
-  workflow: workflowShape.isRequired,
-  className: PropTypes.string,
-};

@@ -9,27 +9,34 @@
 */
 
 import styles from "./WorkflowBadges.module.scss";
-import PropTypes from "prop-types";
 import { Label, Popup } from "semantic-ui-react";
 import { JupyterNotebookIcon, DaskIcon } from "~/components";
 import { INTERACTIVE_SESSION_URL, DASK_DASHBOARD_URL } from "~/client";
 import { LauncherLabel } from "~/components";
 import { getReanaToken, getUserEmail } from "~/selectors";
 import { useSelector } from "react-redux";
+import { ParsedWorkflow } from "~/util";
 
-export default function WorkflowBadges({ workflow, badgeSize = "tiny" }) {
+interface Props {
+  workflow: ParsedWorkflow;
+  badgeSize?: string;
+}
+
+export default function WorkflowBadges({
+  workflow,
+  badgeSize = "tiny",
+}: Props) {
   const reanaToken = useSelector(getReanaToken);
   const userEmail = useSelector(getUserEmail);
-  const {
-    size,
-    launcherURL,
-    services,
-    session_uri: sessionUri,
-    session_status: sessionStatus,
-    ownerEmail,
-    sharedWith = [],
-  } = workflow;
-  const hasDiskUsage = size.raw > 0;
+  const { launcherURL, ownerEmail, sharedWith = [] } = workflow;
+  const size = workflow.size as
+    | { raw: number; human_readable: string }
+    | undefined;
+  const services =
+    (workflow.services as Array<{ status: string }> | undefined) ?? [];
+  const sessionUri = workflow.session_uri as string | undefined;
+  const sessionStatus = workflow.session_status as string | undefined;
+  const hasDiskUsage = size !== undefined && size.raw > 0;
   const isSessionOpen = sessionStatus === "running";
   const isDaskClusterUp =
     services.length > 0 && services[0].status === "running";
@@ -128,8 +135,3 @@ export default function WorkflowBadges({ workflow, badgeSize = "tiny" }) {
     </div>
   );
 }
-
-WorkflowBadges.propTypes = {
-  workflow: PropTypes.object.isRequired,
-  badgeSize: PropTypes.string,
-};

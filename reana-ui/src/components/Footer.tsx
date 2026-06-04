@@ -17,7 +17,7 @@ import { getConfig } from "~/selectors";
 import styles from "./Footer.module.scss";
 
 export default function Footer() {
-  const config = useSelector(getConfig);
+  const config: any = useSelector(getConfig);
   return (
     <footer className={styles["footer-bottom"]}>
       <span className={styles["links"]}>

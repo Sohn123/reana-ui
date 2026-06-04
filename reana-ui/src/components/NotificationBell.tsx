@@ -16,8 +16,8 @@ import { getUserQuota } from "~/selectors";
 import { getQuotaNotifications } from "~/pages/profile/components/Quota";
 
 export default function NotificationBell() {
-  const quota = useSelector(getUserQuota);
-  const notifications = getQuotaNotifications(quota);
+  const quota: any = useSelector(getUserQuota);
+  const notifications: any[] = getQuotaNotifications(quota);
   const hasNotifications = !!notifications.length;
   return (
     <Popup

@@ -19,9 +19,10 @@ import { getConfig } from "~/selectors";
 import styles from "./Announcement.module.scss";
 
 export default function Announcement() {
-  const hiddenAnnouncement = window.localStorage.getItem("hideAnnouncement");
-  const config = useSelector(getConfig);
-  const [hidden, setHidden] = useState(
+  const hiddenAnnouncement: string | null =
+    window.localStorage.getItem("hideAnnouncement");
+  const config: any = useSelector(getConfig);
+  const [hidden, setHidden] = useState<string | null | false>(
     hiddenAnnouncement === config.announcement && hiddenAnnouncement,
   );
 

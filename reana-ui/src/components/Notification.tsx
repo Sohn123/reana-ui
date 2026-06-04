@@ -8,10 +8,9 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { useRef } from "react";
+import React, { useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Container, Message, Transition } from "semantic-ui-react";
-import PropTypes from "prop-types";
 
 import { clearNotification } from "~/actions";
 import { getNotification } from "~/selectors";
@@ -20,18 +19,28 @@ import styles from "./Notification.module.scss";
 
 const AUTO_CLOSE_TIMEOUT = 16000;
 
+interface Props {
+  icon?: string | null;
+  header?: string | null;
+  message?: string | React.ReactNode | null;
+  closable?: boolean;
+  error?: boolean;
+  success?: boolean;
+  warning?: boolean;
+}
+
 export default function Notification({
-  icon,
-  header,
-  message,
-  closable,
-  error,
-  success,
-  warning,
-}) {
+  icon = null,
+  header = null,
+  message = null,
+  closable = true,
+  error = false,
+  success = false,
+  warning = false,
+}: Props) {
   const dispatch = useDispatch();
   const notification = useSelector(getNotification);
-  const timer = useRef(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hide = () => dispatch(clearNotification);
   const visible = message || notification ? true : false;
@@ -68,23 +77,3 @@ export default function Notification({
     </Transition>
   );
 }
-
-Notification.propTypes = {
-  icon: PropTypes.string,
-  header: PropTypes.string,
-  message: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
-  closable: PropTypes.bool,
-  error: PropTypes.bool,
-  success: PropTypes.bool,
-  warning: PropTypes.bool,
-};
-
-Notification.defaultProps = {
-  icon: null,
-  header: null,
-  message: null,
-  closable: true,
-  error: false,
-  success: false,
-  warning: false,
-};
