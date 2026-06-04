@@ -10,6 +10,7 @@
 
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
 import client from "~/client";
 import { setOnUnauthorized } from "~/api/axiosInstance";
@@ -34,8 +35,12 @@ fetchInitialData(store);
 const container = document.getElementById("root");
 const root = createRoot(container);
 
+const queryClient = new QueryClient();
+
 root.render(
-  <Provider store={store}>
-    <App />
-  </Provider>,
+  <QueryClientProvider client={queryClient}>
+    <Provider store={store}>
+      <App />
+    </Provider>
+  </QueryClientProvider>,
 );

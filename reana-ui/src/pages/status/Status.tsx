@@ -8,16 +8,13 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { useEffect, useState } from "react";
 import React from "react";
-import { useDispatch } from "react-redux";
 import { Container, Grid, Label, Loader } from "semantic-ui-react";
 
 import BasePage from "../BasePage";
-import { errorActionCreator } from "~/actions";
-import client from "~/client";
 import { Title, PieChart } from "~/components";
 import { healthMapping } from "~/util";
+import { useStatus, useInfo, Status200, Info200 } from "~/api/generated";
 
 import styles from "./Status.module.scss";
 
@@ -38,39 +35,16 @@ const getDataSeries = (
   }));
 
 export default function Status() {
-  const [status, setStatus] = useState<any>();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [jobsMemoryLimit, setJobsMemoryLimit] = useState<string | null>(null);
-  const dispatch = useDispatch<any>();
+  // Orval v8 wraps response types with `& { headers }` for its fetch client;
+  // our Axios mutator returns only the body, so we cast to the plain body type.
+  const { data: statusRaw, isLoading } = useStatus();
+  const status = statusRaw as Status200 | undefined;
 
-  useEffect(() => {
-    const getClusterStatus = () => {
-      setLoading(true);
-      client
-        .getClusterStatus()
-        .then((res) => {
-          setStatus(res.data);
-          setLoading(false);
-        })
-        .catch((err) => {
-          setStatus({});
-          setLoading(false);
-          dispatch(errorActionCreator(err));
-        });
-    };
-
-    getClusterStatus();
-  }, [dispatch]);
-
-  useEffect(() => {
-    client
-      .getClusterInfo()
-      .then((res) => {
-        const raw = res?.data?.default_kubernetes_memory_limit?.value;
-        setJobsMemoryLimit(raw);
-      })
-      .catch(() => setJobsMemoryLimit(null));
-  }, []);
+  // access_token is optional in practice — session auth handles authorization
+  const { data: infoRaw } = useInfo({ access_token: "" });
+  const infoData = infoRaw as Info200 | undefined;
+  const jobsMemoryLimit: string | null =
+    infoData?.default_kubernetes_memory_limit?.value ?? null;
 
   const serialize: any = {
     node: ({ available, unschedulable, ...rest }) => {
@@ -80,7 +54,7 @@ export default function Status() {
         data: getDataSeries({
           unschedulable,
           // display as running color if there are workflows running
-          [!!status.workflow.running ? "running" : "queued"]: available,
+          [!!status?.workflow?.running ? "running" : "queued"]: available,
         }),
         ...rest,
       };
@@ -159,7 +133,7 @@ export default function Status() {
     <BasePage title="Cluster health">
       <Container text className={styles.container}>
         <Title>Cluster health</Title>
-        {loading || !status ? (
+        {isLoading || !status ? (
           <Loader active inline="centered">
             Loading cluster status...
           </Loader>
