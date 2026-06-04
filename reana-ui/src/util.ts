@@ -11,13 +11,133 @@ import { sortBy } from "lodash";
 import Mime from "mime/Mime";
 import otherMimeTypes from "mime/types/other";
 import standardMimeTypes from "mime/types/standard";
-import moment from "moment";
+import moment, { Duration, Moment } from "moment";
 import queryString from "query-string";
+
+// ---------------------------------------------------------------------------
+// Interfaces / type aliases
+// ---------------------------------------------------------------------------
+
+export interface WorkflowStatusInfo {
+  icon: string;
+  color: string;
+  preposition?: string;
+}
+
+export interface RawWorkflowProgress {
+  finished: { total: number } | null;
+  total: { total: number };
+  running: { total: number } | null;
+  failed: { total: number } | null;
+  run_started_at: string | null;
+  run_finished_at: string | null;
+  run_stopped_at: string | null;
+}
+
+/** Raw workflow object as returned by the API. */
+export interface RawWorkflow {
+  id: string;
+  name: string;
+  status: string;
+  created: string;
+  progress: RawWorkflowProgress;
+  launcher_url?: string;
+  owner_email?: string;
+  shared_with?: string[];
+  // Allow any additional API fields during migration
+  [key: string]: unknown;
+}
+
+/** Parsed workflow object after `parseWorkflows` processing. */
+export interface ParsedWorkflow {
+  id: string;
+  name: string;
+  run: string;
+  status: string;
+  completed: number;
+  total: number;
+  running: number;
+  failed: number;
+  launcherURL?: string;
+  ownerEmail?: string;
+  sharedWith: string[];
+  createdDate: string;
+  startedDate: string;
+  finishedDate: string;
+  friendlyCreated: string;
+  friendlyStarted?: string;
+  friendlyFinished?: string;
+  duration?: string | null;
+  // Allow any additional fields carried over from the raw workflow
+  [key: string]: unknown;
+}
+
+/** Keyed map of parsed workflows returned by `parseWorkflows`. */
+export interface ParsedWorkflowMap {
+  [id: string]: ParsedWorkflow;
+}
+
+export interface RawRetentionRule {
+  apply_on: string | null;
+  retention_days: number;
+  status: string;
+  workspace_files: string;
+}
+
+export interface ParsedRetentionRule {
+  applyOn: string | null;
+  timeBeforeExecution: string | null;
+  retentionDays: number;
+  workspaceFiles: string;
+  status: string;
+  created: boolean;
+  active: boolean;
+  inactive: boolean;
+  pending: boolean;
+  applied: boolean;
+}
+
+export interface RawJobLog {
+  status: string;
+  started_at: string | null;
+  finished_at: string | null;
+  duration?: string | null;
+  // Allow any additional log fields
+  [key: string]: unknown;
+}
+
+export interface ParsedLogs {
+  jobLogs: { [jobId: string]: RawJobLog };
+  engineLogs: string;
+  serviceLogs: { [serviceId: string]: string };
+}
+
+export interface WorkspaceFile {
+  name: string;
+  "last-modified"?: string;
+  lastModified?: string;
+  size?: number;
+  // Allow any additional file fields
+  [key: string]: unknown;
+}
+
+export interface PaginationParams {
+  page?: number;
+  size?: number;
+  search?: string;
+  sort?: string;
+  status?: string;
+  [key: string]: unknown;
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
 /**
  * Mapping between workflow statuses and colors and icons.
  */
-export const statusMapping = {
+export const statusMapping: Record<string, WorkflowStatusInfo> = {
   finished: { icon: "check circle", color: "green", preposition: "in" },
   running: { icon: "spinner", color: "blue", preposition: "for" },
   failed: { icon: "delete", color: "red", preposition: "after" },
@@ -35,47 +155,61 @@ export const statusMapping = {
 /**
  * Mapping between health statuses and Semantic-UI colors.
  */
-export const healthMapping = {
+export const healthMapping: Record<string, string> = {
   healthy: "green",
   warning: "brown",
   critical: "red",
 };
 
+// ---------------------------------------------------------------------------
+// Functions
+// ---------------------------------------------------------------------------
+
 /**
  * Parses API data into displayable data
  */
-export function parseWorkflows(workflows) {
+export function parseWorkflows(
+  workflows: RawWorkflow[],
+): ParsedWorkflowMap | [] {
   if (!Array.isArray(workflows)) return [];
   // Convert array into object to avoid traversing the whole array.
-  workflows = workflows.reduce((obj, workflow) => {
+  const result = workflows.reduce<ParsedWorkflowMap>((obj, workflow) => {
     const info = workflow.name.split(".");
-    workflow.name = info.shift();
+    workflow.name = info.shift() as string;
     workflow.run = info.join(".");
     const progress = workflow.progress.finished;
     const total = workflow.progress.total;
     const running = workflow.progress.running;
     const failed = workflow.progress.failed;
-    workflow.completed = typeof progress === "object" ? progress.total : 0;
+    workflow.completed =
+      typeof progress === "object" && progress !== null ? progress.total : 0;
     workflow.total = total.total;
-    workflow.running = typeof running === "object" ? running.total : 0;
-    workflow.failed = typeof failed === "object" ? failed.total : 0;
+    workflow.running =
+      typeof running === "object" && running !== null ? running.total : 0;
+    workflow.failed =
+      typeof failed === "object" && failed !== null ? failed.total : 0;
     workflow.launcherURL = workflow.launcher_url;
     workflow.ownerEmail = workflow.owner_email;
     workflow.sharedWith = workflow.shared_with ?? [];
-    workflow = parseWorkflowDates(workflow);
+    const parsed = parseWorkflowDates(workflow as unknown as ParsedWorkflow);
 
-    obj[workflow.id] = workflow;
+    obj[parsed.id as string] = parsed;
     return obj;
   }, {});
 
-  return workflows;
+  return result;
 }
 
 /**
  * Parses workflow's retention rules.
  */
-export function parseWorkflowRetentionRules(retentionRules) {
-  const getTimeBeforeExecution = (applyOn, currentTime) => {
+export function parseWorkflowRetentionRules(
+  retentionRules: RawRetentionRule[],
+): ParsedRetentionRule[] {
+  const getTimeBeforeExecution = (
+    applyOn: Moment,
+    currentTime: number,
+  ): string => {
     const diff = moment.duration(applyOn.diff(currentTime));
     if (diff.asDays() < 1) {
       return "soon";
@@ -121,7 +255,9 @@ export function parseWorkflowRetentionRules(retentionRules) {
 /**
  * Format a given time duration.
  */
-export function formatDuration(duration) {
+export function formatDuration(
+  duration: Duration | null | undefined,
+): string | null {
   if (duration == null) {
     // the function accepts nullish values so that the result of `getDuration`
     // can be passed directly to `formatDuration`
@@ -131,7 +267,7 @@ export function formatDuration(duration) {
   if (!durationMoment.isValid()) {
     return null;
   }
-  let format;
+  let format: string;
   if (durationMoment.hours()) {
     format = "H[h] m[m] s[s]";
   } else if (durationMoment.minutes()) {
@@ -147,10 +283,13 @@ export function formatDuration(duration) {
  * If the end time is not a valid date (e.g. null), the duration is calculated from the
  * beginning of the event up to the current time.
  */
-export function getDuration(start, end) {
+export function getDuration(
+  start: string | null | undefined,
+  end: string | Moment | null | undefined,
+): Duration | null {
   const startMoment = moment.utc(start);
   if (startMoment.isValid()) {
-    let endMoment = moment.utc(end);
+    let endMoment = moment.utc(end as string);
     if (!endMoment.isValid()) {
       endMoment = moment.utc();
     }
@@ -162,15 +301,21 @@ export function getDuration(start, end) {
 /**
  * Parses workflows date info in a friendly way.
  */
-export function parseWorkflowDates(workflow) {
-  const createdMoment = moment.utc(workflow.created);
-  const startedMoment = moment.utc(workflow.progress.run_started_at);
-  const finishedMoment = moment.utc(workflow.progress.run_finished_at);
-  const stoppedMoment = moment.utc(workflow.progress.run_stopped_at);
+export function parseWorkflowDates(workflow: ParsedWorkflow): ParsedWorkflow {
+  const createdMoment = moment.utc(workflow.created as string);
+  const startedMoment = moment.utc(
+    (workflow.progress as unknown as RawWorkflowProgress).run_started_at,
+  );
+  const finishedMoment = moment.utc(
+    (workflow.progress as unknown as RawWorkflowProgress).run_finished_at,
+  );
+  const stoppedMoment = moment.utc(
+    (workflow.progress as unknown as RawWorkflowProgress).run_stopped_at,
+  );
   // Mapping between workflow status and the end moment to use for calculating the duration
   // If the workflow has not terminated yet (running, queued, pending), the endMoment should not be
   // specified, and the current time will be used instead.
-  const endMomentStatusMapping = {
+  const endMomentStatusMapping: Record<string, Moment> = {
     failed: finishedMoment,
     finished: finishedMoment,
     stopped: stoppedMoment,
@@ -193,7 +338,10 @@ export function parseWorkflowDates(workflow) {
     }
 
     workflow.duration = formatDuration(
-      getDuration(startedMoment, endMomentStatusMapping[workflow.status]),
+      getDuration(
+        startedMoment,
+        endMomentStatusMapping[workflow.status as string],
+      ),
     );
   }
   return workflow;
@@ -202,10 +350,10 @@ export function parseWorkflowDates(workflow) {
 /**
  * Parses workflow logs.
  */
-export function parseLogs(logs) {
+export function parseLogs(logs: string): ParsedLogs {
   const parsedLogs = JSON.parse(logs);
 
-  for (let job of Object.values(parsedLogs.job_logs)) {
+  for (let job of Object.values(parsedLogs.job_logs) as RawJobLog[]) {
     if (job.status === "stopped") {
       // Hide the duration of the job, because in the job object
       // there is no info about when the job (or the workflow) was stopped.
@@ -226,7 +374,7 @@ export function parseLogs(logs) {
 /**
  * Parses workflow files.
  */
-export function parseFiles(files) {
+export function parseFiles(files: WorkspaceFile[]): WorkspaceFile[] {
   if (!Array.isArray(files)) return [];
   files.forEach((file) => {
     // TODO: Change on server side
@@ -242,7 +390,9 @@ export function parseFiles(files) {
  * @param {String} term Search term
  * @returns term format expected by the API.
  */
-export function formatSearch(term) {
+export function formatSearch(
+  term: string | null | undefined,
+): string | null | undefined {
   return term ? JSON.stringify({ name: [term] }) : term;
 }
 
@@ -251,7 +401,7 @@ export function formatSearch(term) {
  * @param {Number} size File size in bytes.
  * @returns The formatted human-readable file size.
  */
-export function formatFileSize(size, digits = 2) {
+export function formatFileSize(size: number, digits: number = 2): string {
   if (size === 0) {
     return "0 Bytes";
   }
@@ -295,7 +445,7 @@ const customMime = new Mime(standardMimeTypes, otherMimeTypes, {
  * Returns mime-type of a given file name.
  * @param {String} fileName File name
  */
-export function getMimeType(fileName) {
+export function getMimeType(fileName: string): string | null {
   // `Snakefile` does not have any extension,
   // so it needs to be handled manually
   if (fileName.endsWith("Snakefile")) {
@@ -307,7 +457,7 @@ export function getMimeType(fileName) {
 /**
  * Stringify query params.
  */
-export function stringifyQueryParams(params) {
+export function stringifyQueryParams(params: PaginationParams): string {
   return queryString.stringify(params, {
     arrayFormat: "comma",
     skipNull: true,

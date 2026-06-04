@@ -10,10 +10,14 @@
 
 export const api = window.location.origin;
 
+interface LaunchParam {
+  required: boolean;
+}
+
 /**
  * Valid Launch-on-REANA querystring parameter keys.
  */
-export const LAUNCH_ON_REANA_PARAMS_WHITELIST = {
+export const LAUNCH_ON_REANA_PARAMS_WHITELIST: Record<string, LaunchParam> = {
   url: { required: true },
   name: { required: false },
   parameters: { required: false },
@@ -38,7 +42,9 @@ export const WORKFLOW_STATUSES = [
   "queued",
   "running",
   "stopped",
-];
+] as const;
+
+export type WorkflowStatus = (typeof WORKFLOW_STATUSES)[number];
 
 /**
  * REANA quotas docs URL.
@@ -54,19 +60,25 @@ export const NON_FINISHED_STATUSES = [
   "queued",
   "pending",
   "running",
-];
+] as const satisfies ReadonlyArray<WorkflowStatus>;
 
 /**
  * List of possible statuses of a workflow, except for `deleted`.
  */
-export const NON_DELETED_STATUSES = WORKFLOW_STATUSES.filter(
+export const NON_DELETED_STATUSES: WorkflowStatus[] = WORKFLOW_STATUSES.filter(
   (status) => status !== "deleted",
 );
 
 /**
  * List of HTML tags that can be present in an announcement.
  */
-export const ALLOWED_HTML_TAGS_ANNOUNCEMENT = ["a", "b", "em", "i", "strong"];
+export const ALLOWED_HTML_TAGS_ANNOUNCEMENT: string[] = [
+  "a",
+  "b",
+  "em",
+  "i",
+  "strong",
+];
 
 /**
  * Pagination size used when we prefetch workflow runs in a single request
