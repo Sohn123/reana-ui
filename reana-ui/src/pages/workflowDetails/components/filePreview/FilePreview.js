@@ -11,12 +11,14 @@
 import sortBy from "lodash/sortBy";
 import PropTypes from "prop-types";
 import { Suspense, lazy, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Button, Icon, Loader, Message, Modal } from "semantic-ui-react";
 
 import client, { WORKFLOW_FILE_URL } from "~/client";
 import { getConfig } from "~/selectors";
-import { formatFileSize, getMimeType } from "~/util";
+import { formatFileSize, getMimeType, parseFiles } from "~/util";
+import { CopyLinkButton } from "..";
 
 import styles from "./FilePreview.module.scss";
 
@@ -167,33 +169,84 @@ function getFileURL(workflow, fileName, preview = true) {
   return WORKFLOW_FILE_URL(workflow, fileName, { preview });
 }
 
-export default function FilePreview({ workflow, fileName, size, onClose }) {
+export default function FilePreview({ workflow, fileName, onClose }) {
   const config = useSelector(getConfig);
+  const location = useLocation();
+  const isSharedLink = !location.state?.internal;
+  const [size, setSize] = useState(null);
+  const shareUrl = `${window.location.origin}/workflows/${workflow}/workspace?name=${encodeURIComponent(fileName)}`;
+
+  useEffect(() => {
+    const stateSize = location.state?.size;
+    if (stateSize !== undefined) {
+      setSize(stateSize);
+      return;
+    }
+    setSize(null);
+    client
+      .getWorkflowFiles(
+        workflow,
+        { page: 1, size: 1 },
+        JSON.stringify({ name: [fileName] }),
+      )
+      .then((resp) => {
+        const items = parseFiles(resp.data.items ?? []);
+        const match = items.find((f) => f.name === fileName);
+        setSize(match?.size?.raw ?? 0);
+      })
+      .catch(() => setSize(0));
+  }, [workflow, fileName]);
 
   let preview = null;
-  // Check whether the file can be previewed
-  const message = checkConstraints(fileName, size, config.filePreviewSizeLimit);
-  if (message) {
-    preview = <Modal.Content scrolling>{message}</Modal.Content>;
-  } else {
-    const mimeType = matchesMimeType(
-      Object.keys(PREVIEW_MIME_PREFIX_WHITELIST),
-      fileName,
-    );
-    const Preview = PREVIEW_MIME_PREFIX_WHITELIST[mimeType];
+
+  if (size === null) {
     preview = (
-      <Preview
-        workflow={workflow}
-        fileName={fileName}
-        size={size}
-        url={getFileURL(workflow, fileName)}
-      />
+      <Modal.Content>
+        <Loader
+          active
+          className={styles["dark-loader"]}
+          inline="centered"
+          content="Loading file preview..."
+        />
+      </Modal.Content>
     );
+  } else {
+    const message = checkConstraints(
+      fileName,
+      size,
+      config.filePreviewSizeLimit,
+    );
+    if (message) {
+      preview = <Modal.Content scrolling>{message}</Modal.Content>;
+    } else {
+      const mimeType = matchesMimeType(
+        Object.keys(PREVIEW_MIME_PREFIX_WHITELIST),
+        fileName,
+      );
+      const Preview = PREVIEW_MIME_PREFIX_WHITELIST[mimeType];
+      preview = (
+        <Preview
+          workflow={workflow}
+          fileName={fileName}
+          size={size}
+          url={getFileURL(workflow, fileName)}
+        />
+      );
+    }
   }
 
   return (
     <Modal open closeIcon onClose={onClose ? onClose : () => {}}>
       <Modal.Header>{fileName}</Modal.Header>
+      {isSharedLink && (
+        <Modal.Description>
+          <Message
+            icon="info circle"
+            content="Workspace files can change over time — you're viewing the current version of this file."
+            info
+          />
+        </Modal.Description>
+      )}
       <Suspense
         fallback={
           <Modal.Content>
@@ -209,6 +262,7 @@ export default function FilePreview({ workflow, fileName, size, onClose }) {
         {preview}
       </Suspense>
       <Modal.Actions>
+        <CopyLinkButton url={shareUrl} fileName={fileName} label="Copy link" />
         <Button primary as="a" href={getFileURL(workflow, fileName, false)}>
           <Icon name="download" /> Download
         </Button>
@@ -220,6 +274,5 @@ export default function FilePreview({ workflow, fileName, size, onClose }) {
 FilePreview.propTypes = {
   workflow: PropTypes.string.isRequired,
   fileName: PropTypes.string.isRequired,
-  size: PropTypes.number.isRequired,
   onClose: PropTypes.func,
 };

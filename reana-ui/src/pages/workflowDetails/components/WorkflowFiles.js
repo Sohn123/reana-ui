@@ -13,9 +13,17 @@ import PropTypes from "prop-types";
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Icon, Loader, Message, Segment, Table } from "semantic-ui-react";
+import {
+  Button,
+  Icon,
+  Loader,
+  Message,
+  Segment,
+  Table,
+} from "semantic-ui-react";
 
 import { fetchWorkflowFiles } from "~/actions";
+import { WORKFLOW_FILE_URL } from "~/client";
 import { Pagination, Search } from "~/components";
 import {
   getWorkflowFiles,
@@ -23,12 +31,28 @@ import {
   getWorkflowRefresh,
   loadingDetails,
 } from "~/selectors";
-import { WorkflowRetentionRules } from ".";
+import { CopyLinkButton, WorkflowRetentionRules } from ".";
 import FilePreview from "./filePreview/FilePreview";
 
 import styles from "./WorkflowFiles.module.scss";
 
 const PAGE_SIZE = 15;
+
+function getDownloadURL(workflow, fileName) {
+  return WORKFLOW_FILE_URL(workflow, fileName, { preview: false });
+}
+
+function openPreviewParams(prev, name) {
+  const next = new URLSearchParams(prev);
+  next.set("name", name);
+  return next;
+}
+
+function closePreviewParams(prev) {
+  const next = new URLSearchParams(prev);
+  next.delete("name");
+  return next;
+}
 
 export default function WorkflowFiles({ id, page = 1, onPageChange }) {
   const dispatch = useDispatch();
@@ -52,11 +76,18 @@ export default function WorkflowFiles({ id, page = 1, onPageChange }) {
     [page],
   );
 
-  // Keep input in sync when URL changes
+  // Sync filePreview state from URL params
   useEffect(() => {
     const urlSearch = searchParams.get("search") || "";
+    const fileName = searchParams.get("name") || "";
+
+    if (fileName) {
+      setFilePreview({ workflow: id, fileName });
+    } else {
+      setFilePreview(null);
+    }
     setSearchText((prev) => (prev !== urlSearch ? urlSearch : prev));
-  }, [searchParams]);
+  }, [searchParams, id]);
 
   useEffect(() => {
     dispatch(fetchWorkflowFiles(id, pagination, searchQuery));
@@ -75,7 +106,7 @@ export default function WorkflowFiles({ id, page = 1, onPageChange }) {
       setSorting({ direction: "ascending", column: clickedColumn });
       return;
     }
-    setFiles(files.reverse());
+    setFiles([...files].reverse());
     setSorting({
       ...sorting,
       direction: sorting.direction === "ascending" ? "descending" : "ascending",
@@ -98,6 +129,17 @@ export default function WorkflowFiles({ id, page = 1, onPageChange }) {
     />
   );
 
+  const openPreview = (name, fileSize) => {
+    setSearchParams((prev) => openPreviewParams(prev, name), {
+      replace: false,
+      state: { internal: true, size: fileSize },
+    });
+  };
+
+  const closePreview = () => {
+    setSearchParams((prev) => closePreviewParams(prev), { replace: false });
+  };
+
   // Submit search on Enter/click, then reset to page 1 (remove ?page)
   const submitSearch = () => {
     const q = searchText.trim();
@@ -114,6 +156,9 @@ export default function WorkflowFiles({ id, page = 1, onPageChange }) {
     );
     resetSort();
   };
+
+  const buildShareLink = (name) =>
+    `${window.location.origin}/workflows/${id}/workspace?name=${encodeURIComponent(name)}`;
 
   return files === null ? (
     <Message
@@ -158,6 +203,10 @@ export default function WorkflowFiles({ id, page = 1, onPageChange }) {
                 >
                   Size {headerIcon("size.raw")}
                 </Table.HeaderCell>
+                <Table.HeaderCell
+                  width={3}
+                  textAlign="center"
+                ></Table.HeaderCell>
               </Table.Row>
             </Table.Header>
 
@@ -167,13 +216,7 @@ export default function WorkflowFiles({ id, page = 1, onPageChange }) {
                   <Table.Row
                     key={name}
                     className={styles["files-row"]}
-                    onClick={() =>
-                      setFilePreview({
-                        workflow: id,
-                        fileName: name,
-                        size: size.raw,
-                      })
-                    }
+                    onClick={() => openPreview(name, size.raw)}
                   >
                     <Table.Cell>
                       <Icon name="file" />
@@ -181,16 +224,37 @@ export default function WorkflowFiles({ id, page = 1, onPageChange }) {
                     </Table.Cell>
                     <Table.Cell>{lastModified}</Table.Cell>
                     <Table.Cell>{size.human_readable || size.raw}</Table.Cell>
+                    <Table.Cell
+                      className={styles["copy-link-cell"]}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button
+                        icon="eye"
+                        size="mini"
+                        aria-label={`Preview ${name}`}
+                        onClick={() => openPreview(name, size.raw)}
+                      />
+                      <Button
+                        size="mini"
+                        icon="download"
+                        as="a"
+                        href={getDownloadURL(id, name)}
+                        aria-label={`Download ${name}`}
+                      />
+                      <CopyLinkButton
+                        url={buildShareLink(name)}
+                        fileName={name}
+                        size="mini"
+                        aria-label={`Copy shareable link to ${name}`}
+                      />
+                    </Table.Cell>
                   </Table.Row>
                 ))}
             </Table.Body>
           </Table>
 
           {filePreview && (
-            <FilePreview
-              {...filePreview}
-              onClose={() => setFilePreview(null)}
-            />
+            <FilePreview {...filePreview} onClose={closePreview} />
           )}
 
           {filesCount > PAGE_SIZE && (

@@ -5232,6 +5232,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"copy-to-clipboard@npm:^4.0.2":
+  version: 4.0.2
+  resolution: "copy-to-clipboard@npm:4.0.2"
+  checksum: 10c0/0a007c86cc5f235653ddd98ef9901fa8d52b40bd0aeadce4ecc92d6aad16f89136a526f2ae7050421de5b02a374d803de88a40cde1298915093d1b62aeadc9e5
+  languageName: node
+  linkType: hard
+
 "core-js-compat@npm:^3.43.0, core-js-compat@npm:^3.48.0":
   version: 3.49.0
   resolution: "core-js-compat@npm:3.49.0"
@@ -12396,6 +12403,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": "npm:^7"
     "@typescript-eslint/parser": "npm:^7"
     axios: "npm:^1.13.2"
+    copy-to-clipboard: "npm:^4.0.2"
     craco-alias: "npm:^3.0.1"
     dompurify: "npm:^3.3.1"
     eslint: "npm:^8.57.0"

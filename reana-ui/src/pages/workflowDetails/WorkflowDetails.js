@@ -265,14 +265,15 @@ export default function WorkflowDetails() {
           activeIndex={activeTabIndex}
           onTabChange={(_, data) => {
             const nextKey = tabKeys[data.activeIndex];
-            // Preserve query params only if needed (page and search are only meaningful for workspace)
-            const keepQuery =
-              nextKey === "workspace"
-                ? (() => {
-                    const q = new URLSearchParams(searchParams);
-                    return q.toString() ? `?${q.toString()}` : "";
-                  })()
-                : "";
+            // Preserve query params only for workspace; strip file-preview params when leaving it.
+            const keepQuery = (() => {
+              if (nextKey !== "workspace") return "";
+              const q = new URLSearchParams(searchParams);
+              // Don't carry file preview state when re-entering workspace from another tab
+              q.delete("name");
+              q.delete("version");
+              return q.toString() ? `?${q.toString()}` : "";
+            })();
 
             // Build new path, for job-logs, preserve current :job path segment if present.
             const base = `/workflows/${workflowId}`;
