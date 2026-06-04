@@ -16,6 +16,8 @@ import { WorkflowProgressCircleBar } from "~/components";
 
 interface Props {
   workflow: ParsedWorkflow;
+  actionsOnHover?: boolean;
+  className?: string;
 }
 
 export default function WorkflowInfo({ workflow }: Props) {

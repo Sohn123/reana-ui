@@ -116,7 +116,7 @@ export interface WorkspaceFile {
   name: string;
   "last-modified"?: string;
   lastModified?: string;
-  size?: number;
+  size?: { raw: number; human_readable: string };
   // Allow any additional file fields
   [key: string]: unknown;
 }

@@ -72,7 +72,7 @@ export const WORKFLOW_FILES_URL = (
 export const WORKFLOW_FILE_URL = (
   id: string,
   filename: string,
-  preview = true,
+  preview: boolean | Record<string, boolean> = true,
 ): string =>
   `${api}/api/workflows/${id}/workspace/${filename}?${stringifyQueryParams(
     preview as unknown as PaginationParams,

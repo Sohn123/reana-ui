@@ -20,6 +20,7 @@ import { ParsedWorkflow } from "~/util";
 interface Props {
   workflow: ParsedWorkflow;
   badgeSize?: string;
+  className?: string;
 }
 
 export default function WorkflowBadges({
