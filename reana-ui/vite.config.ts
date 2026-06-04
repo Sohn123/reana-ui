@@ -8,6 +8,7 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
+/// <reference types="vitest" />
 import { defineConfig, transformWithEsbuild } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";

@@ -38,7 +38,7 @@ type EnvironmentTypeValue =
   (typeof EnvironmentType)[keyof typeof EnvironmentType];
 
 export default function InteractiveSessionModal() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<any>();
   const open = useSelector(getInteractiveSessionModalOpen);
   const workflow = useSelector(getInteractiveSessionModalItem);
 
@@ -62,7 +62,7 @@ export default function InteractiveSessionModal() {
     (newSessionType: string | null | undefined = null): void => {
       if (!newSessionType) {
         // get default session type
-        newSessionType = allSessionTypes.at(0);
+        newSessionType = allSessionTypes[0];
       }
 
       if (newSessionType) {
@@ -74,7 +74,7 @@ export default function InteractiveSessionModal() {
         }
         // default image is first of recommended
         setRecommendedImage(
-          environments[newSessionType].recommended.at(0)?.image ?? "",
+          environments[newSessionType].recommended[0]?.image ?? "",
         );
         setCustomImage("");
         setIsLoading(false);
@@ -174,7 +174,7 @@ export default function InteractiveSessionModal() {
               label="Session type"
               options={sessionTypeOptions}
               value={sessionType}
-              onChange={(_, { value }) => resetForm(value)}
+              onChange={(_, { value }) => resetForm(value as string)}
               disabled={sessionTypeOptions.length === 1}
             />
           )}
@@ -187,14 +187,18 @@ export default function InteractiveSessionModal() {
                 label="Recommended environments"
                 value="recommended"
                 checked={environmentType === EnvironmentType.Recommended}
-                onChange={(_, { value }) => setEnvironmentType(value)}
+                onChange={(_, { value }) =>
+                  setEnvironmentType(value as EnvironmentTypeValue)
+                }
               />
               <FormRadio
                 name="environmentType"
                 label="Custom environment"
                 value="custom"
                 checked={environmentType === EnvironmentType.Custom}
-                onChange={(_, { value }) => setEnvironmentType(value)}
+                onChange={(_, { value }) =>
+                  setEnvironmentType(value as EnvironmentTypeValue)
+                }
               />
             </FormGroup>
           )}
@@ -208,7 +212,7 @@ export default function InteractiveSessionModal() {
               label="Recommended environments"
               options={recommendedImageOptions}
               value={recommendedImage}
-              onChange={(_, { value }) => setRecommendedImage(value)}
+              onChange={(_, { value }) => setRecommendedImage(value as string)}
               search={true}
             />
           )}

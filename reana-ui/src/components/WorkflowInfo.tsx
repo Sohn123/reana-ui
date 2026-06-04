@@ -38,8 +38,8 @@ export default function WorkflowInfo({ workflow }: Props) {
       <div className={styles["details-box"]}>
         <Icon
           className={styles["status-icon"]}
-          name={statusMapping[status].icon}
-          color={statusMapping[status].color}
+          name={statusMapping[status].icon as any}
+          color={statusMapping[status].color as any}
         />
         <div>
           <span className={styles.name}>{name}</span>

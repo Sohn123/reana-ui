@@ -196,7 +196,7 @@ const deleteRunWithRetry = async (
 };
 
 export default function WorkflowDeleteModal() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<any>();
   const open = useSelector(getWorkflowDeleteModalOpen);
   const workflow = useSelector(getWorkflowDeleteModalItem);
 

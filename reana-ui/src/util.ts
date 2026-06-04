@@ -284,7 +284,7 @@ export function formatDuration(
  * beginning of the event up to the current time.
  */
 export function getDuration(
-  start: string | null | undefined,
+  start: Moment | string | null | undefined,
   end: string | Moment | null | undefined,
 ): Duration | null {
   const startMoment = moment.utc(start);

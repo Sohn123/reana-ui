@@ -18,7 +18,7 @@ import {
 } from "~/selectors";
 
 export default function WorkflowStopModal() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<any>();
   const open = useSelector(getWorkflowStopModalOpen);
   const workflow = useSelector(getWorkflowStopModalItem);
 

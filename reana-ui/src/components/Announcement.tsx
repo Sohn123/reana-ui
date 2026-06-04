@@ -33,7 +33,7 @@ export default function Announcement() {
 
   return (
     config.announcement && (
-      <div className={styles.bar} hidden={hidden}>
+      <div className={styles.bar} hidden={!!hidden}>
         <span className={styles.message}>
           <Icon name="warning circle" />
           <span

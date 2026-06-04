@@ -4,7 +4,7 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
       "~/*": ["src/*"],
@@ -17,6 +17,6 @@
     "resolveJsonModule": true,
     "noEmit": true
   },
-  "include": ["src", "vite.config.ts"],
+  "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }

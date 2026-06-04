@@ -46,7 +46,7 @@ function WorkflowShareStatus({
   handleUnshareWorkflowSuccess,
   handleUnshareWorkflowError,
 }: WorkflowShareStatusProps) {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<any>();
   const loadingWorkflowShareStatus = useSelector(getLoadingWorkflowShareStatus);
   const workflowShareStatus = useSelector(getWorkflowShareStatus(workflow?.id));
 
@@ -178,7 +178,7 @@ interface SharingResult {
 }
 
 export default function WorkflowShareModal() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<any>();
   const open = useSelector(getWorkflowShareModalOpen);
   const workflow = useSelector(getWorkflowShareModalItem);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -256,8 +256,8 @@ export default function WorkflowShareModal() {
     setExpirationModalOpen(false);
   };
 
-  const handleChangeExpirationDate = (_: any, data: { value: Date | null }) =>
-    setExpirationDate(data.value);
+  const handleChangeExpirationDate = (_: any, data: any) =>
+    setExpirationDate(data.value as Date | null);
 
   const handleSetExpirationDate = () => {
     if (neverExpires || !expirationDate) {
@@ -349,7 +349,7 @@ export default function WorkflowShareModal() {
             placeholder="Message (optional)"
             disabled={loadingShareWorkflow}
             value={message}
-            onChange={(_, { value }) => setMessage(value)}
+            onChange={(_, { value }) => setMessage(String(value))}
           />
           <div className={styles["share-buttons"]}>
             <Popup

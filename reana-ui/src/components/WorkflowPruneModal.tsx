@@ -19,7 +19,7 @@ import {
 } from "~/selectors";
 
 export default function WorkflowPruneModal() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<any>();
   const open = useSelector(getWorkflowPruneModalOpen);
   const workflow = useSelector(getWorkflowPruneModalItem);
 

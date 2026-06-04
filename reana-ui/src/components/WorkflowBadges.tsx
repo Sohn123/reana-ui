@@ -54,7 +54,7 @@ export default function WorkflowBadges({
           {workflow.duration && (
             <Label
               basic
-              size={badgeSize}
+              size={badgeSize as any}
               content={`CPU ${workflow.duration}`}
               icon="clock"
             />
@@ -62,7 +62,7 @@ export default function WorkflowBadges({
           {hasDiskUsage && (
             <Label
               basic
-              size={badgeSize}
+              size={badgeSize as any}
               content={`Disk ${size.human_readable}`}
               icon="hdd"
             />
@@ -70,7 +70,7 @@ export default function WorkflowBadges({
           <LauncherLabel url={launcherURL} />
           {isSessionOpen && (
             <Label
-              size={badgeSize}
+              size={badgeSize as any}
               content={"Notebook"}
               icon={
                 <i className="icon">
@@ -85,7 +85,7 @@ export default function WorkflowBadges({
           )}
           {isDaskClusterUp && (
             <Label
-              size={badgeSize}
+              size={badgeSize as any}
               content={"Dashboard"}
               icon={
                 <i className="icon">
@@ -102,7 +102,7 @@ export default function WorkflowBadges({
             <Popup
               trigger={
                 <Label
-                  size={badgeSize}
+                  size={badgeSize as any}
                   content={`Shared with ${sharedWithLabel}`}
                   icon="share alternate"
                   className={styles.sharedByMeBadge}
@@ -122,7 +122,7 @@ export default function WorkflowBadges({
         <Popup
           trigger={
             <Label
-              size={badgeSize}
+              size={badgeSize as any}
               content={ownerEmail}
               icon="eye"
               className={styles.sharedWithMeBadge}

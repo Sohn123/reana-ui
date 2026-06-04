@@ -51,7 +51,7 @@ export default function Search({
       className={styles.input}
       onChange={(_, data) => handleChange(data.value)}
       onKeyDown={handleKeyDown}
-      iconPosition="right"
+      iconPosition={"right" as any}
       loading={loading}
       aria-label="Search workflows"
     >

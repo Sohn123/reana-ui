@@ -51,7 +51,7 @@ export default function CodeSnippet({
     setRevealed(!revealed);
   };
 
-  const accessChildren = (element: React.ReactNode): React.ReactNode => {
+  const accessChildren = (element: any): any => {
     if (Array.isArray(element)) {
       return element.map((el) =>
         el.props?.children ? accessChildren(el.props.children) : el,

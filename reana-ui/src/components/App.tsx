@@ -47,11 +47,11 @@ interface RequireAuthProps {
   children: React.ReactNode;
 }
 
-function RequireAuth({ children }: RequireAuthProps) {
+function RequireAuth({ children }: RequireAuthProps): React.ReactElement {
   const signedIn = useSelector(isSignedIn);
   const location = useLocation();
   if (signedIn) {
-    return children;
+    return children as React.ReactElement;
   } else {
     return <Navigate to="/signin" state={{ from: location }} />;
   }
