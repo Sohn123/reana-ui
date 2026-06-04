@@ -12,14 +12,17 @@ import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import store from "./store";
 import client from "~/client";
+import { setOnUnauthorized } from "~/api/axiosInstance";
 import { loadUser, loadConfig, USER_SIGNEDOUT } from "~/actions";
 import App from "./components/App";
 
 import "semantic-ui-css/semantic.min.css";
 
-client.setOnUnauthorized(() => {
-  store.dispatch({ type: USER_SIGNEDOUT });
-});
+// Wire session-expiry handler for both the old Redux client (step 3)
+// and the new Orval-generated hooks (step 4 onwards).
+const handleUnauthorized = () => store.dispatch({ type: USER_SIGNEDOUT });
+client.setOnUnauthorized(handleUnauthorized);
+setOnUnauthorized(handleUnauthorized);
 
 function fetchInitialData(store) {
   store.dispatch(loadUser());
