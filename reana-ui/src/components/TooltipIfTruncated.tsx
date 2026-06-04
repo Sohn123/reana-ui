@@ -8,12 +8,19 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { Children, cloneElement } from "react";
-import PropTypes from "prop-types";
+import React, { Children, cloneElement } from "react";
 
-export default function TooltipIfTruncated({ children, tooltip }) {
-  function mouseEnter(event) {
-    const element = event.target;
+interface Props {
+  children: React.ReactElement;
+  tooltip?: string | null;
+}
+
+export default function TooltipIfTruncated({
+  children,
+  tooltip = null,
+}: Props) {
+  function mouseEnter(event: React.MouseEvent<HTMLElement>) {
+    const element = event.target as HTMLElement;
     const overflows =
       element.offsetWidth < element.scrollWidth ||
       element.offsetHeight < element.scrollHeight;
@@ -28,12 +35,3 @@ export default function TooltipIfTruncated({ children, tooltip }) {
     onMouseEnter: (event) => mouseEnter(event),
   });
 }
-
-TooltipIfTruncated.propTypes = {
-  children: PropTypes.any.isRequired,
-  tooltip: PropTypes.string,
-};
-
-TooltipIfTruncated.defaultProps = {
-  tooltip: null,
-};

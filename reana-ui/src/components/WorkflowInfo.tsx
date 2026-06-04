@@ -9,14 +9,16 @@
 */
 
 import { Icon, Popup } from "semantic-ui-react";
-import PropTypes from "prop-types";
 
-import { statusMapping } from "~/util";
-
+import { statusMapping, ParsedWorkflow } from "~/util";
 import styles from "./WorkflowInfo.module.scss";
 import { WorkflowProgressCircleBar } from "~/components";
 
-export default function WorkflowInfo({ workflow }) {
+interface Props {
+  workflow: ParsedWorkflow;
+}
+
+export default function WorkflowInfo({ workflow }: Props) {
   const {
     name,
     run,
@@ -78,7 +80,3 @@ export default function WorkflowInfo({ workflow }) {
     </div>
   );
 }
-
-WorkflowInfo.propTypes = {
-  workflow: PropTypes.object.isRequired,
-};

@@ -8,12 +8,15 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { Header } from "semantic-ui-react";
-import PropTypes from "prop-types";
+import { Header, HeaderProps } from "semantic-ui-react";
 
 import styles from "./Title.module.scss";
 
-export default function Title({ className, ...restProps }) {
+interface Props extends HeaderProps {
+  className?: string;
+}
+
+export default function Title({ className = "", ...restProps }: Props) {
   return (
     <Header
       as="h2"
@@ -22,11 +25,3 @@ export default function Title({ className, ...restProps }) {
     />
   );
 }
-
-Title.propTypes = {
-  className: PropTypes.string,
-};
-
-Title.defaultProps = {
-  className: "",
-};

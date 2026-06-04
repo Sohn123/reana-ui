@@ -8,12 +8,19 @@
 
 import styles from "./Box.module.scss";
 
+interface Props {
+  children: React.ReactNode;
+  className?: string;
+  padding?: boolean;
+  flex?: boolean;
+}
+
 export default function Box({
   children,
-  className,
+  className = "",
   padding = true,
   flex = true,
-}) {
+}: Props) {
   return (
     <div
       className={`${styles.box} ${className} ${padding ? styles.padding : ""} ${

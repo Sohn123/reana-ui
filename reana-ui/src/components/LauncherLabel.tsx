@@ -6,16 +6,19 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import PropTypes from "prop-types";
 import { Label, Popup } from "semantic-ui-react";
 
-export default function LauncherLabel({ url }) {
+interface Props {
+  url?: string | null;
+}
+
+export default function LauncherLabel({ url = null }: Props) {
   /**
    * Return appropriate Label component props according to the given launcher URL.
    * @param {String} url Submission workflow launcher URL.
    * @returns {Object} Appropriate component props.
    */
-  function getProps(url) {
+  function getProps(url: string): { content: string; icon?: string } {
     const parsedURL = new URL(url);
     const propsMapping = {
       "zenodo.org": { content: "Zenodo" },
@@ -46,11 +49,3 @@ export default function LauncherLabel({ url }) {
     )
   );
 }
-
-LauncherLabel.propTypes = {
-  url: PropTypes.string,
-};
-
-LauncherLabel.defaultProps = {
-  url: null,
-};

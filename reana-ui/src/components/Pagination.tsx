@@ -8,9 +8,9 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { Icon, Pagination } from "semantic-ui-react";
+import { Icon, Pagination, PaginationProps } from "semantic-ui-react";
 
-export default function PaginationWrapper({ ...props }) {
+export default function PaginationWrapper(props: PaginationProps) {
   return (
     <Pagination
       ellipsisItem={{

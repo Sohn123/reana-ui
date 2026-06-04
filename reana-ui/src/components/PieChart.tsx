@@ -8,20 +8,34 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import PropTypes from "prop-types";
 import { PieChart as ReactMinimalPieChart } from "react-minimal-pie-chart";
 
 const SEPIA_COLOR = "#f5ecec";
 const DARK_SEPIA_COLOR = "#b68181";
 
+interface PieChartDataItem {
+  title: string;
+  value: number;
+  color: string;
+}
+
+interface Props {
+  title?: string | null;
+  data?: PieChartDataItem[] | null;
+  value?: number;
+  totalValue?: number | null;
+  fillColor?: string;
+  backgroundColor?: string;
+}
+
 export default function PieChart({
-  title,
-  data,
-  value,
-  totalValue,
-  fillColor,
-  backgroundColor,
-}) {
+  title = null,
+  data = null,
+  value = 0,
+  totalValue = null,
+  fillColor = DARK_SEPIA_COLOR,
+  backgroundColor = SEPIA_COLOR,
+}: Props) {
   return (
     <ReactMinimalPieChart
       data={
@@ -47,21 +61,3 @@ export default function PieChart({
     />
   );
 }
-
-PieChart.propTypes = {
-  title: PropTypes.string,
-  data: PropTypes.arrayOf(PropTypes.object),
-  value: PropTypes.number,
-  totalValue: PropTypes.number,
-  fillColor: PropTypes.string,
-  backgroundColor: PropTypes.string,
-};
-
-PieChart.defaultProps = {
-  title: null,
-  value: 0,
-  data: null,
-  totalValue: null,
-  fillColor: DARK_SEPIA_COLOR,
-  backgroundColor: SEPIA_COLOR,
-};

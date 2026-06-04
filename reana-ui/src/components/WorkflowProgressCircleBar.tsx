@@ -8,14 +8,20 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import PropTypes from "prop-types";
+import { ParsedWorkflow } from "~/util";
 import styles from "./WorkflowProgressCircleBar.module.scss";
+
+interface Props {
+  workflow: ParsedWorkflow;
+  strokeWidth?: number;
+  size?: string;
+}
 
 export default function WorkflowProgressCircleBar({
   workflow,
   strokeWidth = 22,
   size = "1em",
-}) {
+}: Props) {
   const { completed, failed, running: started, total, status } = workflow;
 
   // running also includes the completed and failed steps
@@ -38,7 +44,7 @@ export default function WorkflowProgressCircleBar({
     lengthRunningArc = 0;
   }
 
-  const calculateArcPath = (length, offset) => {
+  const calculateArcPath = (length: number, offset: number): string => {
     if (length >= 1) {
       // cannot use 1 as otherwise the full circle would not be drawn
       length = 0.9999;
@@ -105,8 +111,3 @@ export default function WorkflowProgressCircleBar({
     </span>
   );
 }
-
-WorkflowProgressCircleBar.propTypes = {
-  workflow: PropTypes.object.isRequired,
-  size: PropTypes.number,
-};

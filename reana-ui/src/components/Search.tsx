@@ -8,23 +8,29 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import PropTypes from "prop-types";
 import { Input, Icon } from "semantic-ui-react";
 import styles from "./Search.module.scss";
+
+interface Props {
+  value?: string;
+  onChange?: (text: string) => void;
+  onSubmit?: () => void;
+  loading?: boolean;
+}
 
 export default function Search({
   value = "",
   onChange,
   onSubmit,
   loading = false,
-}) {
-  const handleChange = (text) => {
+}: Props) {
+  const handleChange = (text: string) => {
     if (typeof onChange === "function") {
       onChange(text);
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && typeof onSubmit === "function") {
       onSubmit();
     }
@@ -54,11 +60,3 @@ export default function Search({
     </Input>
   );
 }
-
-Search.propTypes = {
-  value: PropTypes.string,
-  onChange: PropTypes.func,
-  onSubmit: PropTypes.func,
-  loading: PropTypes.bool,
-  search: PropTypes.func,
-};

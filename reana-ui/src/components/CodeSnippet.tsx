@@ -8,24 +8,33 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Icon, Popup } from "semantic-ui-react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
-import PropTypes from "prop-types";
 
 import styles from "./CodeSnippet.module.scss";
 
 const COPY_CHECK_TIMEOUT = 1500;
 
+interface Props {
+  children: React.ReactNode;
+  dark?: boolean;
+  small?: boolean;
+  copy?: boolean;
+  reveal?: boolean;
+  dollarPrefix?: boolean;
+  classes?: string;
+}
+
 export default function CodeSnippet({
   children,
-  dark,
-  small,
-  copy,
-  reveal,
-  dollarPrefix,
-  classes,
-}) {
+  dark = false,
+  small = false,
+  copy = false,
+  reveal = false,
+  dollarPrefix = true,
+  classes = "",
+}: Props) {
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
@@ -42,7 +51,7 @@ export default function CodeSnippet({
     setRevealed(!revealed);
   };
 
-  const accessChildren = (element) => {
+  const accessChildren = (element: React.ReactNode): React.ReactNode => {
     if (Array.isArray(element)) {
       return element.map((el) =>
         el.props?.children ? accessChildren(el.props.children) : el,
@@ -94,21 +103,3 @@ export default function CodeSnippet({
     </div>
   );
 }
-
-CodeSnippet.propTypes = {
-  dark: PropTypes.bool,
-  small: PropTypes.bool,
-  copy: PropTypes.bool,
-  reveal: PropTypes.bool,
-  dollarPrefix: PropTypes.bool,
-  classes: PropTypes.string,
-};
-
-CodeSnippet.defaultProps = {
-  dark: false,
-  small: false,
-  copy: false,
-  reveal: false,
-  dollarPrefix: true,
-  classes: "",
-};

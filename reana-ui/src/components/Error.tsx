@@ -9,13 +9,17 @@
 */
 
 import { Container, Image } from "semantic-ui-react";
-import PropTypes from "prop-types";
 
 import LogoImg from "~/images/logo-reana.svg";
 
 import styles from "./Error.module.scss";
 
-export default function Error({ message, title }) {
+interface Props {
+  message?: string;
+  title?: string;
+}
+
+export default function Error({ message = "", title = "Error" }: Props) {
   return (
     <Container textAlign="center" className={styles.container}>
       <Image centered spaced src={LogoImg} size="small" />
@@ -24,13 +28,3 @@ export default function Error({ message, title }) {
     </Container>
   );
 }
-
-Error.propTypes = {
-  message: PropTypes.string,
-  title: PropTypes.string,
-};
-
-Error.defaultProps = {
-  message: "",
-  title: "Error",
-};

@@ -8,13 +8,16 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import PropTypes from "prop-types";
-
 import styles from "./JupyterNotebookIcon.module.scss";
 
 //TODO: add ability to change color and make it grey in the popup menu
 
-const JupyterNotebookIcon = ({ size, className }) => {
+interface Props {
+  size?: number;
+  className?: string;
+}
+
+const JupyterNotebookIcon = ({ size = 22, className = "" }: Props) => {
   return (
     <svg
       className={className || styles.icon}
@@ -52,16 +55,6 @@ const JupyterNotebookIcon = ({ size, className }) => {
       </g>
     </svg>
   );
-};
-
-JupyterNotebookIcon.defaultProps = {
-  size: 22,
-  className: "",
-};
-
-JupyterNotebookIcon.propTypes = {
-  size: PropTypes.number,
-  className: PropTypes.string,
 };
 
 export default JupyterNotebookIcon;

@@ -7,11 +7,14 @@
   REANA is free software; you can redistribute it and/or modify it
   under the terms of the MIT License; see LICENSE file for more details.
 */
-import PropTypes from "prop-types";
-
 import styles from "./DaskIcon.module.scss";
 
-const DaskIcon = ({ size, className }) => {
+interface Props {
+  size?: number;
+  className?: string;
+}
+
+const DaskIcon = ({ size = 22, className = "" }: Props) => {
   // Generator: Adobe Illustrator 26.0.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)
   return (
     <svg
@@ -46,16 +49,6 @@ const DaskIcon = ({ size, className }) => {
       </g>
     </svg>
   );
-};
-
-DaskIcon.defaultProps = {
-  size: 22,
-  className: "",
-};
-
-DaskIcon.propTypes = {
-  size: PropTypes.number,
-  className: PropTypes.string,
 };
 
 export default DaskIcon;
