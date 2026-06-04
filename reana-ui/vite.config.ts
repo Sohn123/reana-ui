@@ -9,7 +9,7 @@
 */
 
 /// <reference types="vitest" />
-import { defineConfig, transformWithEsbuild } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
@@ -24,19 +24,8 @@ const proxyTarget = {
   ws: true,
 };
 
-// Vite's import-analysis plugin parses files as JS before any transforms run,
-// so .js files containing JSX fail. This plugin runs first and re-transforms
-// them with esbuild's jsx loader. Remove once all files are renamed to .tsx.
-const jsAsJsx = {
-  name: "js-as-jsx",
-  async transform(code, id) {
-    if (!id.match(/src\/.*\.js$/)) return null;
-    return transformWithEsbuild(code, id, { loader: "jsx", jsx: "automatic" });
-  },
-};
-
 export default defineConfig({
-  plugins: [jsAsJsx, react()],
+  plugins: [react()],
 
   resolve: {
     alias: {
@@ -51,12 +40,6 @@ export default defineConfig({
       "/api": proxyTarget,
       // Matches Jupyter notebook session URLs: /<uuid>/...
       "^/[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+/": proxyTarget,
-    },
-  },
-
-  optimizeDeps: {
-    esbuildOptions: {
-      loader: { ".js": "jsx" },
     },
   },
 
