@@ -325,30 +325,38 @@ export function parseWorkflowDates(workflow: ParsedWorkflow): ParsedWorkflow {
     stopped: stoppedMoment,
     deleted: finishedMoment.isValid() ? finishedMoment : stoppedMoment,
   };
-  workflow.createdDate = createdMoment.format("Do MMM YYYY HH:mm");
-  workflow.startedDate = startedMoment.format("Do MMM YYYY HH:mm");
-  workflow.finishedDate = finishedMoment.format("Do MMM YYYY HH:mm");
-  workflow.friendlyCreated = moment
-    .duration(-moment().diff(createdMoment))
-    .humanize(true);
+
+  const parsedWorkflow = {
+    ...workflow,
+    createdDate: createdMoment.format("Do MMM YYYY HH:mm"),
+    startedDate: startedMoment.format("Do MMM YYYY HH:mm"),
+    finishedDate: finishedMoment.format("Do MMM YYYY HH:mm"),
+    friendlyCreated: moment
+      .duration(-moment().diff(createdMoment))
+      .humanize(true),
+    friendlyStarted: undefined,
+    friendlyFinished: undefined,
+    duration: undefined,
+  };
+
   if (startedMoment.isValid()) {
-    workflow.friendlyStarted = moment
+    parsedWorkflow.friendlyStarted = moment
       .duration(-moment().diff(startedMoment))
       .humanize(true);
     if (finishedMoment.isValid()) {
-      workflow.friendlyFinished = moment
+      parsedWorkflow.friendlyFinished = moment
         .duration(-moment().diff(finishedMoment))
         .humanize(true);
     }
 
-    workflow.duration = formatDuration(
+    parsedWorkflow.duration = formatDuration(
       getDuration(
         startedMoment,
         endMomentStatusMapping[workflow.status as string],
       ),
     );
   }
-  return workflow;
+  return parsedWorkflow;
 }
 
 /**
@@ -380,13 +388,14 @@ export function parseLogs(logs: string): ParsedLogs {
  */
 export function parseFiles(files: WorkspaceFile[]): WorkspaceFile[] {
   if (!Array.isArray(files)) return [];
-  files.forEach((file) => {
-    // TODO: Change on server side
-    file["lastModified"] = file["last-modified"];
-    delete file["last-modified"];
+  return files.map((file) => {
+    const { "last-modified": rawLastModified, lastModified, ...rest } = file;
+    return {
+      ...rest,
+      // TODO: Change on server side
+      lastModified: rawLastModified ?? lastModified,
+    };
   });
-
-  return files;
 }
 
 /**
