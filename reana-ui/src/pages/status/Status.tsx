@@ -14,7 +14,7 @@ import { Container, Grid, Label, Loader } from "semantic-ui-react";
 import BasePage from "../BasePage";
 import { Title, PieChart } from "~/components";
 import { healthMapping } from "~/util";
-import { useStatus, useInfo, Status200, Info200 } from "~/api/generated";
+import { useStatus, useInfo } from "~/api/hooks";
 
 import styles from "./Status.module.scss";
 
@@ -35,14 +35,9 @@ const getDataSeries = (
   }));
 
 export default function Status() {
-  // Orval v8 wraps response types with `& { headers }` for its fetch client;
-  // our Axios mutator returns only the body, so we cast to the plain body type.
-  const { data: statusRaw, isLoading } = useStatus();
-  const status = statusRaw as Status200 | undefined;
-
+  const { data: status, isLoading } = useStatus();
   // access_token is optional in practice — session auth handles authorization
-  const { data: infoRaw } = useInfo({ access_token: "" });
-  const infoData = infoRaw as Info200 | undefined;
+  const { data: infoData } = useInfo({ access_token: "" });
   const jobsMemoryLimit: string | null =
     infoData?.default_kubernetes_memory_limit?.value ?? null;
 
