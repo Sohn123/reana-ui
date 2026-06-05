@@ -8,12 +8,11 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useState } from "react";
 import { Accordion, Icon, Label, Table } from "semantic-ui-react";
 
-import { fetchWorkflowRetentionRules } from "~/actions";
-import { getWorkflowRetentionRules } from "~/selectors";
+import { useGetWorkflowRetentionRules } from "~/api/hooks";
+import { parseWorkflowRetentionRules } from "~/util";
 
 import styles from "./WorkflowRetentionRules.module.scss";
 
@@ -32,18 +31,15 @@ function LabelRule({ workspaceFiles }: LabelRuleProps) {
 export default function WorkflowRetentionRules({
   id,
 }: WorkflowRetentionRulesProps) {
-  const dispatch = useDispatch<any>();
   const [showRules, setShowRules] = useState<boolean>(false);
-
-  useEffect(() => {
-    dispatch(fetchWorkflowRetentionRules(id));
-  }, [dispatch, id]);
+  const { data: retentionData } = useGetWorkflowRetentionRules(id);
+  const rules = parseWorkflowRetentionRules(
+    (retentionData?.retention_rules ?? []) as any,
+  );
 
   const handleClick = (): void => {
     setShowRules((showRules) => !showRules);
   };
-
-  const rules: any[] = useSelector(getWorkflowRetentionRules(id)) || [];
   if (!rules.length) return null;
 
   // First rule that still needs to be applied

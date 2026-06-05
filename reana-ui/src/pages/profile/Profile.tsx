@@ -9,11 +9,8 @@
 */
 
 import { Container } from "semantic-ui-react";
-import { useEffect, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
 
-import { getConfig, getReanaToken } from "~/selectors";
-import { loadUser } from "~/actions";
+import { useGetYou, useGetConfig, useInfo } from "~/api/hooks";
 import BasePage from "../BasePage";
 import GitLabProjects from "./components/GitLabProjects";
 import Token from "./components/Token";
@@ -21,34 +18,15 @@ import Quota from "./components/Quota";
 import { Title } from "~/components";
 
 import styles from "./Profile.module.scss";
-import client from "~/client";
 
 export default function Profile() {
-  const dispatch = useDispatch<any>();
-  const reanaToken = useSelector(getReanaToken) as string | null;
-  const { quotaEnabled } = useSelector(getConfig) as any;
-
-  const [hasGitLabIntegration, setHasGitLabIntegration] = useState<
-    boolean | null
-  >(null);
-
-  useEffect(() => {
-    dispatch(loadUser({ loader: false }));
-  }, [dispatch]);
-
-  useEffect(() => {
-    client
-      .getClusterInfo()
-      .then((res) => {
-        const gitlabHostValue = res?.data?.gitlab_host?.value;
-        // GitLab integration is enabled only when the host is present and non-empty
-        setHasGitLabIntegration(Boolean(gitlabHostValue));
-      })
-      .catch(() => {
-        // If the cluster info endpoint fails, assume GitLab integration is not configured
-        setHasGitLabIntegration(false);
-      });
-  }, []);
+  const { data: youData } = useGetYou();
+  const reanaToken = youData?.reana_token?.value ?? null;
+  const { data: configData } = useGetConfig();
+  const quotaEnabled = (configData as any)?.quota_enabled ?? false;
+  const { data: infoData } = useInfo({ access_token: "" });
+  const hasGitLabIntegration =
+    infoData === undefined ? null : Boolean(infoData?.gitlab_host?.value);
 
   return (
     <BasePage title="Your profile">

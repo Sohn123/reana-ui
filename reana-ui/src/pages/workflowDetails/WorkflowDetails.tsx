@@ -8,25 +8,22 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Container, Dimmer, Icon, Loader, Tab } from "semantic-ui-react";
-import client from "~/client";
 import {
-  fetchWorkflow,
-  fetchWorkflowLogs,
-  fetchWorkflowSpecification,
-} from "~/actions";
+  useGetWorkflows,
+  useGetConfig,
+  useGetWorkflowSpecification,
+  useInfo,
+  getGetWorkflowsQueryKey,
+  WorkflowsParams,
+} from "~/api/hooks";
 import { NON_FINISHED_STATUSES } from "~/config";
-import {
-  getWorkflow,
-  getWorkflowRefresh,
-  loadingWorkflows,
-  isWorkflowsFetched,
-  getConfig,
-  getWorkflowSpecification,
-} from "~/selectors";
+import { getWorkflowRefresh } from "~/selectors";
+import { parseWorkflows, ParsedWorkflow } from "~/util";
 import BasePage from "../BasePage";
 import {
   InteractiveSessionModal,
@@ -56,35 +53,56 @@ export default function WorkflowDetails() {
   } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const dispatch = useDispatch<any>();
-  const workflow: any = useSelector(getWorkflow(workflowId));
-  const loading: any = useSelector(loadingWorkflows);
-  const workflowsFetched: any = useSelector(isWorkflowsFetched);
-  const { pollingSecs }: any = useSelector(getConfig);
-  const interval = useRef<ReturnType<typeof setInterval> | null>(null);
   const workflowRefresh: any = useSelector(getWorkflowRefresh);
+  const queryClient = useQueryClient();
 
-  const workflowSpec: any = useSelector(getWorkflowSpecification(workflowId));
+  const pollingSecs = Number(useGetConfig().data?.polling_secs) || 0;
+
+  const params: WorkflowsParams = {
+    workflow_id_or_name: workflowId,
+    verbose: true,
+    page: 1,
+    size: 1,
+  };
+  const { data: workflowsData, isLoading: loading } = useGetWorkflows(params, {
+    query: {
+      refetchInterval: (query) => {
+        const items = (query.state.data as any)?.items;
+        if (!items?.length) return false;
+        const status = items[0]?.status;
+        const nonFinished = ["running", "queued", "pending", "created"];
+        return nonFinished.includes(status) ? (pollingSecs ?? 0) * 1000 : false;
+      },
+    },
+  });
+  const workflow: ParsedWorkflow | undefined = useMemo(() => {
+    const items = (workflowsData?.items ?? []) as any[];
+    return items.length
+      ? (Object.values(parseWorkflows(items))[0] as ParsedWorkflow)
+      : undefined;
+  }, [workflowsData]);
+  const workflowsFetched = workflowsData !== undefined;
+
+  useEffect(() => {
+    if (workflowRefresh === undefined) return;
+    queryClient.invalidateQueries({ queryKey: getGetWorkflowsQueryKey() });
+  }, [workflowRefresh, queryClient]);
+
+  const infoData = useInfo({ access_token: "" }).data;
   const [daskEnabled, setDaskEnabled] = useState<boolean | null>(null);
   useEffect(() => {
-    client
-      .getClusterInfo()
-      .then((res) => {
-        const raw = res?.data?.dask_enabled?.value;
-        setDaskEnabled(raw?.toLowerCase() === "true");
-      })
-      .catch(() => setDaskEnabled(false));
-  }, []);
+    if (infoData === undefined) return;
+    const raw = infoData?.dask_enabled?.value;
+    setDaskEnabled(raw?.toLowerCase() === "true");
+  }, [infoData]);
 
-  // Fetch workflow specification (to decide if this workflow uses Dask)
-  useEffect(() => {
-    if (!daskEnabled) return;
-    dispatch(fetchWorkflowSpecification(workflowId));
-  }, [dispatch, workflowId, daskEnabled]);
+  const workflowSpec = useGetWorkflowSpecification(workflowId!).data;
 
   const workflowUsesDask = useMemo(() => {
     if (!daskEnabled) return false;
-    return Boolean(workflowSpec?.workflow?.resources?.dask);
+    return Boolean(
+      (workflowSpec?.specification?.workflow as any)?.resources?.dask,
+    );
   }, [daskEnabled, workflowSpec]);
 
   const getPageFromUrl = (): number => {
@@ -122,35 +140,6 @@ export default function WorkflowDetails() {
       },
       { replace: false },
     );
-  };
-
-  const refetchWorkflow = useCallback(() => {
-    const options = { refetch: true, showLoader: false };
-    dispatch(fetchWorkflow(workflowId, options));
-    dispatch(fetchWorkflowLogs(workflowId, options));
-  }, [dispatch, workflowId]);
-
-  useEffect(() => {
-    if (!interval.current && pollingSecs) {
-      interval.current = setInterval(refetchWorkflow, pollingSecs * 1000);
-    }
-    return cleanPolling;
-  }, [dispatch, refetchWorkflow, workflowId, pollingSecs]);
-
-  // FIXME: workflowRefresh is a temporary solution to refresh the workflow
-  // by saving random number in redux. It should be refactored in the future
-  // once websockets will be implemented
-  useEffect(refetchWorkflow, [dispatch, refetchWorkflow, workflowRefresh]);
-
-  useEffect(() => {
-    if (workflow && FINISHED_STATUSES.includes(workflow.status)) {
-      cleanPolling();
-    }
-  }, [workflow]);
-
-  const cleanPolling = () => {
-    clearInterval(interval.current);
-    interval.current = null;
   };
 
   if (!workflowsFetched || loading) {
@@ -245,7 +234,7 @@ export default function WorkflowDetails() {
         <div className={styles["workflow-info"]}>
           <WorkflowInfo workflow={workflow} />
           <div className={styles.actions}>
-            {NON_FINISHED_STATUSES.includes(workflow.status) && (
+            {NON_FINISHED_STATUSES.includes(workflow.status as any) && (
               <Icon
                 link
                 name="refresh"

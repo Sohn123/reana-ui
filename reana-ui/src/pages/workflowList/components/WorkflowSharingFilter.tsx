@@ -8,12 +8,12 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import _ from "lodash";
-import { useEffect, useMemo } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useMemo } from "react";
 import { Dropdown, Grid } from "semantic-ui-react";
-import { fetchUsersSharedWithYou, fetchUsersYouSharedWith } from "~/actions";
-import { getUsersSharedWithYou, getUsersYouSharedWith } from "~/selectors";
+import {
+  useGetUsersSharedWithYou,
+  useGetUsersYouSharedWith,
+} from "~/api/hooks";
 import styles from "./WorkflowSharingFilter.module.scss";
 
 const OWNED_BY = "owned_by";
@@ -41,16 +41,10 @@ export default function WorkflowSharingFilters({
   setSharedWithUser,
   setViewingSharedWithMe,
 }: WorkflowSharingFiltersProps) {
-  const dispatch = useDispatch<any>();
-
-  const usersYouSharedWith = useSelector(
-    getUsersYouSharedWith,
-    _.isEqual,
-  ) as any;
-  const usersSharedWithYou = useSelector(
-    getUsersSharedWithYou,
-    _.isEqual,
-  ) as any;
+  const { data: sharedWithYouData } = useGetUsersSharedWithYou();
+  const usersSharedWithYou = sharedWithYouData?.users ?? [];
+  const { data: youSharedData } = useGetUsersYouSharedWith();
+  const usersYouSharedWith = youSharedData?.users ?? [];
 
   const usersSharedWithYouOptions = useMemo(
     () => [
@@ -81,11 +75,6 @@ export default function WorkflowSharingFilters({
   const selectedUser = viewingSharedWithMe
     ? (sharedWithUser ?? "anybody")
     : (ownedByFilter ?? "you");
-
-  useEffect(() => {
-    dispatch(fetchUsersYouSharedWith());
-    dispatch(fetchUsersSharedWithYou());
-  }, [dispatch]);
 
   const handleSelectedFilterOptionChange = (_: any, { value }: any) => {
     if (value === OWNED_BY) {

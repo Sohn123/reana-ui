@@ -45,6 +45,13 @@ export type {
   InfoParams,
 } from "./generated";
 
+import type { UseQueryOptions } from "@tanstack/react-query";
+
+/** Partial React Query options forwarded to generated hooks (e.g. refetchInterval). */
+type QueryOpts<TData> = {
+  query?: Partial<UseQueryOptions<unknown, unknown, TData>>;
+};
+
 import {
   // Hook imports
   useGetConfig as useGetConfigRaw,
@@ -115,8 +122,16 @@ export function useGetYou() {
 
 // ─── Workflow list ────────────────────────────────────────────────────────────
 
-export function useGetWorkflows(params: GetWorkflowsParams) {
-  const result = useGetWorkflowsRaw(params);
+// GetWorkflowsParams marks `type` required, but the backend accepts it absent.
+export type WorkflowsParams = Omit<GetWorkflowsParams, "type"> & {
+  type?: string;
+};
+
+export function useGetWorkflows(
+  params: WorkflowsParams,
+  opts?: QueryOpts<Body<GetWorkflows200>>,
+) {
+  const result = useGetWorkflowsRaw(params as GetWorkflowsParams, opts as any);
   return { ...result, data: result.data as Body<GetWorkflows200> | undefined };
 }
 

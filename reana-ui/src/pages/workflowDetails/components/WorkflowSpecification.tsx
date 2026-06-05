@@ -8,17 +8,10 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import isEmpty from "lodash/isEmpty";
 import { Loader } from "semantic-ui-react";
 
-import { fetchWorkflowSpecification } from "~/actions";
-import {
-  getWorkflowSpecification,
-  loadingDetails,
-  getWorkflowParameters,
-} from "~/selectors";
+import { useGetWorkflowSpecification } from "~/api/hooks";
 import { CodeSnippet, Title } from "~/components";
 
 import styles from "./WorkflowSpecification.module.scss";
@@ -30,14 +23,10 @@ interface WorkflowSpecificationProps {
 export default function WorkflowSpecification({
   id,
 }: WorkflowSpecificationProps) {
-  const dispatch = useDispatch<any>();
-  const loading: any = useSelector(loadingDetails);
-  const specification: any = useSelector(getWorkflowSpecification(id));
-  const runtimeParams: any = useSelector(getWorkflowParameters(id));
-
-  useEffect(() => {
-    dispatch(fetchWorkflowSpecification(id));
-  }, [dispatch, id]);
+  const { data: specData, isLoading: loading } =
+    useGetWorkflowSpecification(id);
+  const specification = specData?.specification;
+  const runtimeParams = specData?.parameters;
 
   return loading ? (
     <Loader active inline="centered" />

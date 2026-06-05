@@ -9,22 +9,21 @@
 */
 
 import moment from "moment";
-import { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import { Container, Dimmer, Dropdown, Icon, Loader } from "semantic-ui-react";
 
-import { fetchUsersSharedWithYou, fetchWorkflows } from "~/actions";
 import {
-  getConfig,
-  getReanaToken,
-  getWorkflows,
-  getWorkflowsCount,
-  isConfigLoaded,
-  loadingWorkflows,
-  userHasWorkflows,
-  getWorkflowRefresh,
-  getUsersSharedWithYou,
-} from "~/selectors";
+  useGetWorkflows,
+  WorkflowsParams,
+  useGetConfig,
+  useGetYou,
+  useGetUsersSharedWithYou,
+  getGetWorkflowsQueryKey,
+} from "~/api/hooks";
+import { getWorkflowRefresh } from "~/selectors";
+import { parseWorkflows } from "~/util";
 import { Title, Pagination, Search } from "~/components";
 import BasePage from "../BasePage";
 import Welcome from "./components/Welcome";
@@ -44,19 +43,15 @@ export default function WorkflowListPage() {
 
 function Workflows() {
   const currentUTCTime = () => moment.utc().format("HH:mm:ss [UTC]");
-  const [refreshedAt, setRefreshedAt] = useState(currentUTCTime());
-  const dispatch = useDispatch<any>();
-  const config = useSelector(getConfig) as any;
-  const workflows = useSelector(getWorkflows) as any;
-  const workflowsCount = useSelector(getWorkflowsCount) as any;
-  const hasUserWorkflows = useSelector(userHasWorkflows) as any;
-  const usersSharedWithYou = useSelector(getUsersSharedWithYou) as any;
+  const [refreshedAt] = useState(currentUTCTime());
+  const { data: configData } = useGetConfig();
+  const { data: youData } = useGetYou();
+  const { data: usersSharedWithYouData } = useGetUsersSharedWithYou();
+  const pollingSecs = (configData as any)?.polling_secs ?? 0;
+  const reanaToken = youData?.reana_token?.value;
+  const usersSharedWithYou = usersSharedWithYouData?.users ?? [];
   const workflowRefresh = useSelector(getWorkflowRefresh) as any;
-  const loading = useSelector(loadingWorkflows) as any;
-  const reanaToken = useSelector(getReanaToken) as any;
-  const configLoaded = useSelector(isConfigLoaded) as any;
-  const hideWelcomePage = !workflows || !configLoaded;
-  const { pollingSecs } = config;
+  const queryClient = useQueryClient();
   const {
     query,
     requestParams,
@@ -86,42 +81,45 @@ function Workflows() {
     sharedWithUser,
   } = query;
 
-  // Load information about users who have shared workflows with you
-  useEffect(() => {
-    dispatch(fetchUsersSharedWithYou());
-  }, [dispatch]);
+  const workflowParams: WorkflowsParams = {
+    verbose: true,
+    page: requestParams.pagination.page,
+    size: requestParams.pagination.size,
+    search: requestParams.search,
+    status: requestParams.status as any,
+    shared: requestParams.shared,
+    shared_by: requestParams.sharedBy,
+    shared_with: requestParams.sharedWith,
+    sort: requestParams.sort,
+    ...(requestParams.type ? { type: requestParams.type } : {}),
+  };
 
-  const lastParamsRef = useRef<any>();
-  useEffect(() => {
-    if (!configLoaded) return;
-    if (lastParamsRef.current === requestParams) return;
-    lastParamsRef.current = requestParams;
-    dispatch(fetchWorkflows(requestParams as any));
-  }, [dispatch, requestParams, configLoaded]);
+  const { data: workflowsData, isLoading: loading } = useGetWorkflows(
+    workflowParams,
+    {
+      query: {
+        refetchInterval: reanaToken && pollingSecs ? pollingSecs * 1000 : false,
+      },
+    },
+  );
 
-  const latestParamsRef = useRef(requestParams);
-  useEffect(() => {
-    latestParamsRef.current = requestParams;
-  }, [requestParams]);
+  const workflowArray = useMemo(
+    () =>
+      Object.values(
+        parseWorkflows((workflowsData?.items ?? []) as any[]),
+      ) as import("~/util").ParsedWorkflow[],
+    [workflowsData],
+  );
 
-  useEffect(() => {
-    // Only poll if user has a token (no point polling for users without workflows)
-    if (!reanaToken || !pollingSecs || !configLoaded) return;
-    const id = setInterval(() => {
-      const apiParams = latestParamsRef.current;
-      dispatch(fetchWorkflows({ ...apiParams, showLoader: false } as any));
-      setRefreshedAt(currentUTCTime());
-    }, pollingSecs * 1000);
-    return () => clearInterval(id);
-  }, [dispatch, reanaToken, pollingSecs, configLoaded]);
+  const workflowsCount = workflowsData?.total ?? 0;
+  const hasUserWorkflows = workflowsCount > 0;
+  const hideWelcomePage = loading || workflowsCount > 0;
 
   // External refresh trigger
   useEffect(() => {
-    if (!configLoaded) return;
     if (workflowRefresh === undefined) return;
-    const apiParams = latestParamsRef.current;
-    dispatch(fetchWorkflows({ ...apiParams, showLoader: false } as any));
-  }, [workflowRefresh, dispatch, configLoaded]);
+    queryClient.invalidateQueries({ queryKey: getGetWorkflowsQueryKey() });
+  }, [workflowRefresh, queryClient]);
 
   if (hideWelcomePage) {
     return (
@@ -136,11 +134,6 @@ function Workflows() {
   if (!hasUserWorkflows && usersSharedWithYou.length === 0) {
     return <Welcome />;
   }
-
-  // Flatten workflows object to array for rendering
-  const workflowArray = Object.values(
-    workflows || {},
-  ) as import("~/util").ParsedWorkflow[];
 
   return (
     <div className={styles.container}>

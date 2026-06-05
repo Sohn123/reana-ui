@@ -9,14 +9,13 @@
 */
 
 import React from "react";
-import { useSelector } from "react-redux";
 import { Grid, Label } from "semantic-ui-react";
 import isEmpty from "lodash/isEmpty";
 import moment from "moment";
 
 import { PieChart, Notification } from "~/components";
 import { REANA_QUOTAS_DOCS_URL } from "~/config";
-import { getConfig, getUserQuota } from "~/selectors";
+import { useGetYou, useGetConfig } from "~/api/hooks";
 import { healthMapping } from "~/util";
 
 import styles from "./Quota.module.scss";
@@ -45,8 +44,10 @@ export function getQuotaPeriodWindow(
 }
 
 export default function Quota() {
-  const config = useSelector(getConfig) as any;
-  const quota = useSelector(getUserQuota) as any;
+  const { data: youData } = useGetYou();
+  const quota = youData?.quota ?? {};
+  const { data: configData } = useGetConfig();
+  const config = configData ?? {};
 
   function renderPieChart(title: string, quota: any) {
     const { usage, limit, health } = quota;
@@ -99,7 +100,7 @@ export default function Quota() {
         {renderPieChart("Disk", quota.disk)}
       </Grid>
       <div className={styles["quota-info"]}>
-        {getQuotaNotifications(quota, config.adminEmail).map(
+        {getQuotaNotifications(quota, (config as any).adminEmail).map(
           (notification, index) => {
             const message = (
               <span>

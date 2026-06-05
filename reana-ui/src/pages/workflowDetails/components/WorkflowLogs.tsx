@@ -10,13 +10,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
 import { Icon, Dropdown, Label, Loader, Message } from "semantic-ui-react";
 
-import { fetchWorkflowLogs } from "~/actions";
+import { useGetWorkflowLogs } from "~/api/hooks";
 import { NON_FINISHED_STATUSES } from "~/config";
-import { statusMapping, ParsedWorkflow } from "~/util";
-import { getWorkflowLogs, loadingDetails } from "~/selectors";
+import { statusMapping, ParsedWorkflow, parseLogs } from "~/util";
 import { CodeSnippet, TooltipIfTruncated } from "~/components";
 
 import styles from "./WorkflowLogs.module.scss";
@@ -350,17 +348,13 @@ export default function WorkflowLogs({
   engine = false,
   service = false,
 }: WorkflowLogsProps) {
-  const dispatch = useDispatch<any>();
-  const loading: any = useSelector(loadingDetails);
-  const {
-    engineLogs = "",
-    jobLogs = {},
-    serviceLogs = {},
-  }: any = useSelector(getWorkflowLogs(workflow.id));
-
-  useEffect(() => {
-    dispatch(fetchWorkflowLogs(workflow.id));
-  }, [dispatch, workflow]);
+  const { data: logsData, isLoading: loading } = useGetWorkflowLogs(
+    workflow.id,
+  );
+  const parsed = logsData?.logs ? parseLogs(logsData.logs) : null;
+  const engineLogs = parsed?.engineLogs ?? "";
+  const jobLogs = parsed?.jobLogs ?? {};
+  const serviceLogs = parsed?.serviceLogs ?? {};
 
   return loading ? (
     <Loader active inline="centered" />

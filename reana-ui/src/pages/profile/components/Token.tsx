@@ -8,15 +8,14 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { useSelector } from "react-redux";
-
-import { getReanaToken } from "~/selectors";
+import { useGetYou } from "~/api/hooks";
 import { CodeSnippet } from "~/components";
 import { WelcomeNoTokenMsg } from "~/pages/workflowList/components/Welcome";
 import { api } from "~/config";
 
 export default function Token() {
-  const reanaToken = useSelector(getReanaToken) as string | null;
+  const { data: youData } = useGetYou();
+  const reanaToken = youData?.reana_token?.value ?? null;
 
   return reanaToken ? (
     <>

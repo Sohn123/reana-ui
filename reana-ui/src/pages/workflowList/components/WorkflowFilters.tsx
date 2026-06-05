@@ -8,13 +8,13 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import _ from "lodash";
-import { useEffect, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useMemo } from "react";
 import { Dropdown, Grid } from "semantic-ui-react";
 
-import { fetchUsersSharedWithYou, fetchUsersYouSharedWith } from "~/actions";
-import { getUsersSharedWithYou, getUsersYouSharedWith } from "~/selectors";
+import {
+  useGetUsersSharedWithYou,
+  useGetUsersYouSharedWith,
+} from "~/api/hooks";
 import WorkflowCategoryFilter from "./WorkflowCategoryTabs";
 import WorkflowStatusFilter from "./WorkflowStatusFilter";
 import WorkflowSessionFilters from "./WorkflowSessionFilters";
@@ -58,23 +58,10 @@ export default function WorkflowFilters({
   showOpenSessionsOnly,
   setShowOpenSessionsOnly,
 }: WorkflowFiltersProps) {
-  const dispatch = useDispatch<any>();
-  const usersSharedWithYou = useSelector(
-    getUsersSharedWithYou,
-    _.isEqual,
-  ) as any;
-  const usersYouSharedWith = useSelector(
-    getUsersYouSharedWith,
-    _.isEqual,
-  ) as any;
-
-  useEffect(() => {
-    if (category === "shared-with-me") {
-      dispatch(fetchUsersSharedWithYou());
-    } else if (category === "i-shared") {
-      dispatch(fetchUsersYouSharedWith());
-    }
-  }, [dispatch, category]);
+  const { data: sharedWithYouData } = useGetUsersSharedWithYou();
+  const usersSharedWithYou = sharedWithYouData?.users ?? [];
+  const { data: youSharedData } = useGetUsersYouSharedWith();
+  const usersYouSharedWith = youSharedData?.users ?? [];
 
   const sharedByUserOptions = useMemo(
     () => [
