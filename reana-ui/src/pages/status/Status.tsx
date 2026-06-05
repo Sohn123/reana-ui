@@ -9,7 +9,7 @@
 */
 
 import React from "react";
-import { Container, Grid, Label, Loader } from "semantic-ui-react";
+import { Container, Grid, Label, Loader, Message } from "semantic-ui-react";
 
 import BasePage from "../BasePage";
 import { Title, PieChart } from "~/components";
@@ -34,8 +34,16 @@ const getDataSeries = (
     color: statusColorMapping[title],
   }));
 
+export function getStatusErrorMessage(error: unknown): string {
+  return (
+    (error as any)?.response?.data?.message ||
+    (error as any)?.message ||
+    "Could not load cluster status."
+  );
+}
+
 export default function Status() {
-  const { data: status, isLoading } = useStatus();
+  const { data: status, error, isError, isLoading } = useStatus();
   // access_token is optional in practice — session auth handles authorization
   const { data: infoData } = useInfo({ access_token: "" });
   const jobsMemoryLimit: string | null =
@@ -128,15 +136,23 @@ export default function Status() {
     <BasePage title="Cluster health">
       <Container text className={styles.container}>
         <Title>Cluster health</Title>
-        {isLoading || !status ? (
+        {isLoading ? (
           <Loader active inline="centered">
             Loading cluster status...
           </Loader>
+        ) : isError || !status ? (
+          <Message
+            error
+            icon="warning sign"
+            header="An error has occurred"
+            content={getStatusErrorMessage(error)}
+          />
         ) : (
           <>
             <Grid columns={2}>
               {Object.entries(status)
                 .sort(([, a], [, b]) => (a as any).sort - (b as any).sort)
+                .filter(([title]) => serialize[title])
                 .map(([title, status]) =>
                   renderPieChart(serialize[title](status)),
                 )}
