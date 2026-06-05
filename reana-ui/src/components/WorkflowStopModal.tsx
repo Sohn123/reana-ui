@@ -9,9 +9,11 @@
 */
 
 import { useDispatch } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button, Modal, Message, Icon } from "semantic-ui-react";
 
-import { stopWorkflow } from "~/actions";
+import client from "~/client";
+import { triggerNotification, errorActionCreator } from "~/actions";
 import { ParsedWorkflow } from "~/util";
 
 interface Props {
@@ -26,7 +28,19 @@ export default function WorkflowStopModal({
   onClose,
 }: Props) {
   const dispatch = useDispatch<any>();
+  const queryClient = useQueryClient();
   const { id, name, run } = workflow;
+
+  const handleStop = async () => {
+    try {
+      const resp = await client.stopWorkflow(id);
+      queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
+      dispatch(triggerNotification("Success!", (resp.data as any).message));
+      onClose();
+    } catch (err) {
+      dispatch(errorActionCreator(err));
+    }
+  };
 
   return (
     <Modal open={isOpen} onClose={onClose} closeIcon size="small">
@@ -45,12 +59,7 @@ export default function WorkflowStopModal({
         </p>
       </Modal.Content>
       <Modal.Actions>
-        <Button
-          negative
-          onClick={() => {
-            dispatch(stopWorkflow(id)).then(onClose);
-          }}
-        >
+        <Button negative onClick={handleStop}>
           Stop
         </Button>
         <Button onClick={onClose}>Cancel</Button>

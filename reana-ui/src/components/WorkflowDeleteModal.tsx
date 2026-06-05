@@ -10,9 +10,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button, Checkbox, Icon, Message, Modal } from "semantic-ui-react";
 
-import { deleteWorkflow } from "~/actions";
+import { triggerNotification } from "~/actions";
 import client from "~/client";
 import styles from "./WorkflowDeleteModal.module.css";
 import {
@@ -174,15 +175,14 @@ const formatRunList = (
 };
 
 const deleteRunWithRetry = async (
-  dispatch: any,
   workflowId: string,
-  options: any,
+  options: { workspace?: boolean; allRuns?: boolean },
 ): Promise<void> => {
   let lastError = null;
 
   for (let attempt = 1; attempt <= DELETE_RETRY_ATTEMPTS; attempt += 1) {
     try {
-      await dispatch(deleteWorkflow(workflowId, options));
+      await client.deleteWorkflow(workflowId, options);
       return;
     } catch (err) {
       lastError = err;
@@ -204,6 +204,7 @@ export default function WorkflowDeleteModal({
   onClose,
 }: Props) {
   const dispatch = useDispatch<any>();
+  const queryClient = useQueryClient();
 
   const [allRuns, setAllRuns] = useState(false);
   const [confirmRelatedDeletion, setConfirmRelatedDeletion] = useState(false);
@@ -292,9 +293,9 @@ export default function WorkflowDeleteModal({
     try {
       // If user selected all runs, keep existing behavior
       if (allRuns) {
-        await dispatch(
-          deleteWorkflow(id, { allRuns: true, notifyError: false }),
-        );
+        const resp = await client.deleteWorkflow(id, { allRuns: true });
+        queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
+        dispatch(triggerNotification("Success!", (resp.data as any).message));
         onCloseModal();
         return;
       }
@@ -330,10 +331,9 @@ export default function WorkflowDeleteModal({
 
         for (const workflowId of orderedIds) {
           try {
-            await deleteRunWithRetry(dispatch, workflowId, {
+            await deleteRunWithRetry(workflowId, {
               allRuns: false,
               workspace: true,
-              notifyError: false,
             });
           } catch (err) {
             const failedRun = (allRunItems || []).find(
@@ -349,18 +349,18 @@ export default function WorkflowDeleteModal({
           }
         }
 
+        queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
         onCloseModal();
         return;
       }
 
       // normal single run delete
-      await dispatch(
-        deleteWorkflow(id, {
-          allRuns: false,
-          workspace: true,
-          notifyError: false,
-        }),
-      );
+      const resp = await client.deleteWorkflow(id, {
+        allRuns: false,
+        workspace: true,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
+      dispatch(triggerNotification("Success!", (resp.data as any).message));
       onCloseModal();
     } catch (err) {
       console.error("Error deleting workflow", err);
@@ -372,6 +372,7 @@ export default function WorkflowDeleteModal({
     allRuns,
     confirmRelatedDeletion,
     dispatch,
+    queryClient,
     hasRelatedRuns,
     id,
     isDeleting,

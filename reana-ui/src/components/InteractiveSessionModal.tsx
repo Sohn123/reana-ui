@@ -20,8 +20,10 @@ import {
   Modal,
 } from "semantic-ui-react";
 
-import { openInteractiveSession } from "~/actions";
+import { triggerNotification, errorActionCreator } from "~/actions";
 import { useGetConfig } from "~/api/hooks";
+import { useQueryClient } from "@tanstack/react-query";
+import client from "~/client";
 import { ParsedWorkflow } from "~/util";
 
 const EnvironmentType = {
@@ -43,6 +45,7 @@ export default function InteractiveSessionModal({
   onClose,
 }: Props) {
   const dispatch = useDispatch<any>();
+  const queryClient = useQueryClient();
   const config = useGetConfig().data ?? ({} as any);
   const environments: any = config.interactiveSessions?.environments ?? {};
   const allSessionTypes: string[] = useMemo(
@@ -155,9 +158,33 @@ export default function InteractiveSessionModal({
       environmentType === EnvironmentType.Recommended
         ? recommendedImage
         : customImage;
-    dispatch(
-      openInteractiveSession(workflow.id, { type: sessionType, image }),
-    ).finally(onCloseModal);
+    const inactivityPeriod = (config as any)
+      ?.maxInteractiveSessionInactivityPeriod;
+    const inactivityWarning = inactivityPeriod
+      ? `Please note that it will be automatically closed after ${inactivityPeriod} days of inactivity.`
+      : "";
+
+    client
+      .openInteractiveSession(workflow.id, {
+        type: sessionType ?? undefined,
+        image: image ?? undefined,
+      })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
+        dispatch(
+          triggerNotification(
+            "Success!",
+            "The interactive session has been created. " +
+              "However, it could take several minutes to start the Jupyter Notebook. " +
+              "Click on the Jupyter notebook badge to access it. " +
+              inactivityWarning,
+          ),
+        );
+      })
+      .catch((err) => {
+        dispatch(errorActionCreator(err));
+      })
+      .finally(onCloseModal);
   };
 
   return (

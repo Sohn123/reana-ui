@@ -10,9 +10,11 @@
 
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button, Checkbox, Icon, Message, Modal } from "semantic-ui-react";
 
-import { pruneWorkspace } from "~/actions";
+import client from "~/client";
+import { triggerNotification, errorActionCreator } from "~/actions";
 import { ParsedWorkflow } from "~/util";
 
 interface Props {
@@ -27,6 +29,7 @@ export default function WorkflowPruneModal({
   onClose,
 }: Props) {
   const dispatch = useDispatch<any>();
+  const queryClient = useQueryClient();
   const [includeInputs, setIncludeInputs] = useState<boolean>(false);
   const [includeOutputs, setIncludeOutputs] = useState<boolean>(false);
 
@@ -34,10 +37,24 @@ export default function WorkflowPruneModal({
   const size = workflow.size as { human_readable?: string } | undefined;
 
   useEffect(() => {
-    // reset local state whenever the modal opens for a new workflow
     setIncludeInputs(false);
     setIncludeOutputs(false);
   }, [id, isOpen]);
+
+  const handlePrune = async () => {
+    try {
+      const resp = await client.pruneWorkspace(id, {
+        includeInputs,
+        includeOutputs,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
+      dispatch(triggerNotification("Success!", (resp.data as any).message));
+      onClose();
+    } catch (err) {
+      dispatch(errorActionCreator(err));
+      // Keep modal open on error
+    }
+  };
 
   return (
     <Modal open={isOpen} onClose={onClose} closeIcon size="small">
@@ -72,19 +89,7 @@ export default function WorkflowPruneModal({
         />
       </Modal.Content>
       <Modal.Actions>
-        <Button
-          negative
-          onClick={async () => {
-            try {
-              await dispatch(
-                pruneWorkspace(id, { includeInputs, includeOutputs }),
-              );
-              onClose();
-            } catch {
-              // keep modal open on error; notification is handled upstream
-            }
-          }}
-        >
+        <Button negative onClick={handlePrune}>
           Prune "{name}#{run}"
         </Button>
         <Button onClick={onClose}>Cancel</Button>

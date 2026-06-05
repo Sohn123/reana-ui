@@ -10,10 +10,12 @@
 
 import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import { Icon, Menu, Popup } from "semantic-ui-react";
 
-import { closeInteractiveSession, deleteWorkflow } from "~/actions";
+import { triggerNotification, errorActionCreator } from "~/actions";
 import { useGetYou } from "~/api/hooks";
+import client from "~/client";
 import { ParsedWorkflow } from "~/util";
 
 import { JupyterNotebookIcon } from "~/components";
@@ -37,6 +39,7 @@ export default function WorkflowActionsPopup({
   className = "",
 }: Props) {
   const dispatch = useDispatch<any>();
+  const queryClient = useQueryClient();
   const userEmail = useGetYou().data?.email ?? "";
 
   // Popup open/closed
@@ -89,9 +92,15 @@ export default function WorkflowActionsPopup({
       key: "closeNotebook",
       content: "Close Jupyter Notebook",
       icon: JupyterIcon,
-      onClick: () => {
-        dispatch(closeInteractiveSession(id));
+      onClick: async () => {
         closePopup();
+        try {
+          const resp = await client.closeInteractiveSession(id);
+          queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
+          dispatch(triggerNotification("Success!", (resp.data as any).message));
+        } catch (err) {
+          dispatch(errorActionCreator(err));
+        }
       },
     });
   }
@@ -137,9 +146,18 @@ export default function WorkflowActionsPopup({
       key: "freeup",
       content: "Free up disk",
       icon: "hdd",
-      onClick: () => {
-        dispatch(deleteWorkflow(id));
+      onClick: async () => {
         closePopup();
+        try {
+          const resp = await client.deleteWorkflow(id, {
+            workspace: true,
+            allRuns: false,
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
+          dispatch(triggerNotification("Success!", (resp.data as any).message));
+        } catch (err) {
+          dispatch(errorActionCreator(err));
+        }
       },
     });
   }

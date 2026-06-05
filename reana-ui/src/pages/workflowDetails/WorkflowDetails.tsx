@@ -9,9 +9,7 @@
 */
 
 import { useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import { Container, Dimmer, Icon, Loader, Tab } from "semantic-ui-react";
 import {
   useGetWorkflows,
@@ -22,7 +20,6 @@ import {
   WorkflowsParams,
 } from "~/api/hooks";
 import { NON_FINISHED_STATUSES } from "~/config";
-import { getWorkflowRefresh } from "~/selectors";
 import { parseWorkflows, ParsedWorkflow } from "~/util";
 import BasePage from "../BasePage";
 import {
@@ -48,8 +45,6 @@ export default function WorkflowDetails() {
   } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const workflowRefresh: any = useSelector(getWorkflowRefresh);
-  const queryClient = useQueryClient();
 
   const pollingSecs = Number(useGetConfig().data?.polling_secs) || 0;
 
@@ -77,11 +72,6 @@ export default function WorkflowDetails() {
       : undefined;
   }, [workflowsData]);
   const workflowsFetched = workflowsData !== undefined;
-
-  useEffect(() => {
-    if (workflowRefresh === undefined) return;
-    queryClient.invalidateQueries({ queryKey: getGetWorkflowsQueryKey() });
-  }, [workflowRefresh, queryClient]);
 
   const infoData = useInfo({ access_token: "" }).data;
   const [daskEnabled, setDaskEnabled] = useState<boolean | null>(null);

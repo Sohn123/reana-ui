@@ -10,7 +10,6 @@
 
 import moment from "moment";
 import { useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import { Container, Dimmer, Dropdown, Icon, Loader } from "semantic-ui-react";
 
@@ -22,7 +21,6 @@ import {
   useGetUsersSharedWithYou,
   getGetWorkflowsQueryKey,
 } from "~/api/hooks";
-import { getWorkflowRefresh } from "~/selectors";
 import { parseWorkflows } from "~/util";
 import { Title, Pagination, Search } from "~/components";
 import BasePage from "../BasePage";
@@ -50,7 +48,6 @@ function Workflows() {
   const pollingSecs = (configData as any)?.polling_secs ?? 0;
   const reanaToken = youData?.reana_token?.value;
   const usersSharedWithYou = usersSharedWithYouData?.users ?? [];
-  const workflowRefresh = useSelector(getWorkflowRefresh) as any;
   const queryClient = useQueryClient();
   const {
     query,
@@ -114,12 +111,6 @@ function Workflows() {
   const workflowsCount = workflowsData?.total ?? 0;
   const hasUserWorkflows = workflowsCount > 0;
   const hideWelcomePage = loading || workflowsCount > 0;
-
-  // External refresh trigger
-  useEffect(() => {
-    if (workflowRefresh === undefined) return;
-    queryClient.invalidateQueries({ queryKey: getGetWorkflowsQueryKey() });
-  }, [workflowRefresh, queryClient]);
 
   if (hideWelcomePage) {
     return (
