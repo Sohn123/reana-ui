@@ -110,15 +110,12 @@ function Workflows() {
 
   const workflowsCount = workflowsData?.total ?? 0;
   const hasUserWorkflows = workflowsCount > 0;
-  const hideWelcomePage = loading || workflowsCount > 0;
 
-  if (hideWelcomePage) {
+  if (loading) {
     return (
-      loading && (
-        <Dimmer active inverted>
-          <Loader>Loading workflows...</Loader>
-        </Dimmer>
-      )
+      <Dimmer active inverted>
+        <Loader>Loading workflows...</Loader>
+      </Dimmer>
     );
   }
 
