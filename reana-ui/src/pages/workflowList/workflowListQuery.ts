@@ -153,8 +153,7 @@ export function serializeQueryToApiParams(
   let shared, sharedBy, sharedWith;
 
   if (query.category === "all") {
-    // Union of owned + shared-with-me
-    shared = true;
+    shared = false;
     sharedBy = undefined;
     sharedWith = undefined;
   } else if (query.category === "shared-with-me") {

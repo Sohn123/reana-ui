@@ -47,6 +47,7 @@ export type {
 } from "./generated";
 
 import type { UseQueryOptions } from "@tanstack/react-query";
+import { formatSearch } from "~/util";
 
 /** Partial React Query options forwarded to generated hooks (e.g. refetchInterval). */
 type QueryOpts<TData> = {
@@ -97,6 +98,10 @@ import {
  */
 type Body<T> = T extends { headers: Headers } ? Omit<T, "headers"> : T;
 
+function normalizeSearchParam(search: string | undefined): string | undefined {
+  return formatSearch(search) ?? undefined;
+}
+
 // ─── Cluster / infra ─────────────────────────────────────────────────────────
 
 export function useGetConfig() {
@@ -132,11 +137,28 @@ export type WorkflowsParams = Omit<GetWorkflowsParams, "type"> & {
   type?: string;
 };
 
+export function normalizeWorkflowsParams(
+  params: WorkflowsParams,
+): GetWorkflowsParams {
+  return {
+    ...params,
+    search: normalizeSearchParam(params.search),
+  } as GetWorkflowsParams;
+}
+
+export function normalizeFilesParams(params: GetFilesParams): GetFilesParams {
+  return {
+    ...params,
+    search: normalizeSearchParam(params.search),
+  };
+}
+
 export function useGetWorkflows(
   params: WorkflowsParams,
   opts?: QueryOpts<Body<GetWorkflows200>>,
 ) {
-  const result = useGetWorkflowsRaw(params as GetWorkflowsParams, opts as any);
+  const normalizedParams = normalizeWorkflowsParams(params);
+  const result = useGetWorkflowsRaw(normalizedParams, opts as any);
   return { ...result, data: result.data as Body<GetWorkflows200> | undefined };
 }
 
@@ -172,7 +194,7 @@ export function useGetWorkflowLogs(
 }
 
 export function useGetFiles(workflowIdOrName: string, params: GetFilesParams) {
-  const result = useGetFilesRaw(workflowIdOrName, params);
+  const result = useGetFilesRaw(workflowIdOrName, normalizeFilesParams(params));
   return { ...result, data: result.data as Body<GetFiles200> | undefined };
 }
 

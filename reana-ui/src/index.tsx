@@ -10,6 +10,8 @@
 
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
 import { setOnUnauthorized } from "~/api/axiosInstance";
 import App from "./components/App";
 import { NotificationProvider } from "~/NotificationContext";
@@ -32,6 +34,7 @@ const root = createRoot(container);
 
 root.render(
   <QueryClientProvider client={queryClient}>
+    <ReactQueryDevtools initialIsOpen={false} />
     <NotificationProvider>
       <App />
     </NotificationProvider>

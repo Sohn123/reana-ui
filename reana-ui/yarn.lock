@@ -3000,6 +3000,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tanstack/query-devtools@npm:5.101.0":
+  version: 5.101.0
+  resolution: "@tanstack/query-devtools@npm:5.101.0"
+  checksum: 10c0/ffbd4ef8923ec18b6f2aa534fdaff339a26e17b8386b965b6898f70cb52add0f798fc628efe3553a0e5a53b2ccbaf8023614d6a3ba04d4ab0a37735e27f0dd83
+  languageName: node
+  linkType: hard
+
+"@tanstack/react-query-devtools@npm:^5.101.0":
+  version: 5.101.0
+  resolution: "@tanstack/react-query-devtools@npm:5.101.0"
+  dependencies:
+    "@tanstack/query-devtools": "npm:5.101.0"
+  peerDependencies:
+    "@tanstack/react-query": ^5.101.0
+    react: ^18 || ^19
+  checksum: 10c0/7f81583599041cf3592b815d81e17c7187d1d49bfda0494d338ac50259bda4d28fe329d52a8626bcc33cb7ab9e39ecda6d50b8fba667ca14aaf2e241785196e3
+  languageName: node
+  linkType: hard
+
 "@tanstack/react-query@npm:^5.101.0":
   version: 5.101.0
   resolution: "@tanstack/react-query@npm:5.101.0"
@@ -8150,6 +8169,7 @@ __metadata:
     "@eslint/js": "npm:^9.19.0"
     "@semantic-ui-react/css-patch": "npm:^1.0.0"
     "@tanstack/react-query": "npm:^5.101.0"
+    "@tanstack/react-query-devtools": "npm:^5.101.0"
     "@testing-library/jest-dom": "npm:^6.1.4"
     "@testing-library/react": "npm:^14.0.0"
     "@types/node": "npm:^20.0.0"

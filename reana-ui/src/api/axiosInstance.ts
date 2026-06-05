@@ -41,9 +41,15 @@ export const customAxiosInstance = async <T>(
 ): Promise<T> => {
   const { method = "GET", headers, body, ...rest } = options ?? {};
 
+  // Orval's URLSearchParams encodes commas as %2C. The REANA backend splits
+  // comma-separated array values (e.g. status=created,running) on literal ","
+  // without URL-decoding first, so %2C is not recognised as a separator.
+  // Restore literal commas to match the old client.ts serialisation behaviour.
+  const normalizedUrl = url.replace(/%2C/gi, ",");
+
   try {
     const response = await axios({
-      url,
+      url: normalizedUrl,
       method: method as string,
       headers: headers as Record<string, string>,
       // body in RequestInit is a string/FormData; axios uses `data`
