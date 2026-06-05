@@ -10,7 +10,7 @@
 
 import React, { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Segment } from "semantic-ui-react";
+import { Loader, Segment } from "semantic-ui-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import SignForm from "./components/SignForm";
@@ -23,13 +23,25 @@ export default function Signup() {
   useDocumentTitle("Sign up");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const config = useGetConfig().data ?? ({} as any);
+
+  const { data: configData, isLoading: configLoading } = useGetConfig();
   const [formData, setFormData] = useState<{ email: string; password: string }>(
     { email: "", password: "" },
   );
   const [signErrors, setSignErrors] = useState<
     Array<{ field: string; message: string }>
   >([]);
+
+  if (configLoading) {
+    return (
+      <SignContainer>
+        <Loader active inline="centered" />
+      </SignContainer>
+    );
+  }
+
+  // localUsers defaults to true so the form is shown when config isn't available
+  const localUsers: boolean = configData?.localUsers !== false;
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { target } = event;
@@ -61,7 +73,7 @@ export default function Signup() {
   return (
     <SignContainer>
       <Segment>
-        {config.localUsers && (
+        {localUsers && (
           <SignForm
             submitText="Sign up"
             handleSubmit={handleSignup}
@@ -71,7 +83,7 @@ export default function Signup() {
           />
         )}
       </Segment>
-      {config.localUsers && (
+      {localUsers && (
         <p>
           Already signed up? Go to <Link to="/signin">Sign in</Link>
         </p>

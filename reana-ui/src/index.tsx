@@ -18,8 +18,11 @@ import "semantic-ui-css/semantic.min.css";
 
 const queryClient = new QueryClient();
 
-// On session expiry, clear all cached data and redirect to sign-in
+// On session expiry, clear all cached data and redirect to sign-in.
+// Guard: if already on /signin the user is simply not logged in — not an
+// expiry event — so don't redirect or clear (that would cause an infinite loop).
 setOnUnauthorized(() => {
+  if (window.location.pathname.startsWith("/signin")) return;
   queryClient.clear();
   window.location.replace("/signin");
 });

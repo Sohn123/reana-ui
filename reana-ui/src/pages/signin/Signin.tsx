@@ -11,7 +11,7 @@
 import React, { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetConfig } from "~/api/hooks";
-import { Button, Divider, Segment } from "semantic-ui-react";
+import { Button, Divider, Loader, Segment } from "semantic-ui-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import SignForm from "./components/SignForm";
@@ -26,7 +26,8 @@ export default function Signin() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
-  const config = useGetConfig().data ?? ({} as any);
+
+  const { data: configData, isLoading: configLoading } = useGetConfig();
   const [formData, setFormData] = useState<{ email: string; password: string }>(
     { email: "", password: "" },
   );
@@ -34,29 +35,46 @@ export default function Signin() {
     Array<{ field: string; message: string }>
   >([]);
 
-  const tokenIssuancePolicyRaw: string = String(
-    config.accessTokenIssuancePolicy ?? "manual",
+  // Show a spinner until config has settled — this prevents rendering conditional
+  // UI that depends on config fields before we know their values.
+  if (configLoading) {
+    return (
+      <SignContainer>
+        <Loader active inline="centered" />
+      </SignContainer>
+    );
+  }
+
+  // Explicit defaults for each config field.
+  // localUsers defaults to true so the email/password form is always shown
+  // when config isn't available (e.g. public-API fetch fails).
+  const localUsers: boolean = configData?.localUsers !== false;
+  const cernSSO: boolean = !!configData?.cernSSO;
+  const eoscSSO: boolean = !!configData?.eoscSSO;
+  const loginProviderConfig: any[] =
+    (configData?.loginProviderConfig as any[]) ?? [];
+  const hideSignup: boolean = !!configData?.hideSignup;
+  const adminEmail = configData?.adminEmail as string | undefined;
+  const userConfirmation: boolean = !!configData?.userConfirmation;
+  const accessTokenIssuancePolicy = String(
+    configData?.accessTokenIssuancePolicy ?? "manual",
   )
     .trim()
     .toLowerCase();
+
   const tokenIssuancePolicy: "auto" | "manual" =
-    tokenIssuancePolicyRaw === "auto" || tokenIssuancePolicyRaw === "manual"
-      ? tokenIssuancePolicyRaw
-      : "manual";
+    accessTokenIssuancePolicy === "auto" ? "auto" : "manual";
   const shouldNotifyEmailConfirmation =
-    config.userConfirmation && tokenIssuancePolicy !== "auto";
+    userConfirmation && tokenIssuancePolicy !== "auto";
 
   const handleClick = (ssoProvider: string) => {
-    const from = location.state?.from || {
+    const from = (location.state as any)?.from || {
       pathname: "/",
       search: "",
       hash: "",
     };
     const next = `${from.pathname}${from.search}${from.hash}`;
     window.location.href = USER_OAUTH_SIGNIN_URL(next, ssoProvider);
-    // FIXME: We assume that the sign-up went successfully but we actually don't know.
-    // We should upgrade Invenio-OAuthClient to latest version that supports REST apps
-    // and adapt the whole workflow.
     if (shouldNotifyEmailConfirmation) {
       notify(
         "Success!",
@@ -96,7 +114,7 @@ export default function Signin() {
   return (
     <SignContainer>
       <Segment>
-        {config.cernSSO && (
+        {cernSSO && (
           <>
             <Button
               basic
@@ -109,7 +127,7 @@ export default function Signin() {
             </Button>
           </>
         )}
-        {config.eoscSSO && (
+        {eoscSSO && (
           <>
             <Button
               basic
@@ -122,7 +140,7 @@ export default function Signin() {
             </Button>
           </>
         )}
-        {config.loginProviderConfig.length > 0 && (
+        {loginProviderConfig.length > 0 && (
           <>
             <Button
               basic
@@ -131,20 +149,18 @@ export default function Signin() {
               size="large"
               onClick={() => handleClick("keycloak")}
             >
-              Sign in with {config.loginProviderConfig[0]["config"]["title"]}{" "}
+              Sign in with {loginProviderConfig[0]?.["config"]?.["title"]}{" "}
               Single Sign-On
             </Button>
           </>
         )}
-        {(config.loginProviderConfig.length > 0 ||
-          config.cernSSO ||
-          config.eoscSSO) &&
-          config.localUsers && (
+        {(loginProviderConfig.length > 0 || cernSSO || eoscSSO) &&
+          localUsers && (
             <Divider section horizontal>
               or
             </Divider>
           )}
-        {config.localUsers && (
+        {localUsers && (
           <SignForm
             submitText="Sign in"
             handleSubmit={handleSignin}
@@ -154,19 +170,23 @@ export default function Signin() {
           />
         )}
       </Segment>
-      {config.hideSignup && !config.localUsers && config.cernSSO && (
+      {hideSignup && !localUsers && cernSSO && (
         <p>
           Note that you need to hold an official CERN account in order to use
           this service.
         </p>
       )}
-      {config.hideSignup && config.localUsers && (
+      {hideSignup && localUsers && (
         <p>
           If you do not have an account yet, please contact
-          <a href={`mailto:${config.adminEmail}`}> REANA administrators</a>
+          {adminEmail ? (
+            <a href={`mailto:${adminEmail}`}> REANA administrators</a>
+          ) : (
+            " REANA administrators"
+          )}
         </p>
       )}
-      {!config.hideSignup && config.localUsers && (
+      {!hideSignup && localUsers && (
         <p>
           If you do not have an account yet, please
           <Link to="/signup"> Sign up</Link> here

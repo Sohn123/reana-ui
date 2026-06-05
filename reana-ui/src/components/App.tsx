@@ -64,24 +64,15 @@ function RedirectDetailsToWorkflows() {
 }
 
 export default function App() {
-  const {
-    data: youData,
-    isLoading: userLoading,
-    isError: userError,
-  } = useGetYou();
+  const { data: youData, isLoading: userLoading } = useGetYou();
   const { data: configData, isLoading: configLoading } = useGetConfig();
   const loading = userLoading || configLoading;
   const signedIn = !!youData?.email;
   const signupHidden = (configData as any)?.hideSignup ?? false;
 
-  if (userError) {
-    return (
-      <Error
-        title="Authorization Error"
-        message="Could not connect to the server."
-      />
-    );
-  }
+  // A 401 from /api/you is not an error — it means the user is not signed in.
+  // The router handles that: RequireAuth redirects to /signin, and the /signin
+  // route renders <Signin /> when signedIn is false.
   return (
     <BrowserRouter>
       {loading ? (

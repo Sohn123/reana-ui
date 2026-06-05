@@ -100,7 +100,9 @@ type Body<T> = T extends { headers: Headers } ? Omit<T, "headers"> : T;
 // ─── Cluster / infra ─────────────────────────────────────────────────────────
 
 export function useGetConfig() {
-  const result = useGetConfigRaw();
+  // retry: false — a 401 on /api/config means not signed in, not a transient
+  // error; retrying would cause redirect loops on the signin page.
+  const result = useGetConfigRaw(undefined, { query: { retry: false } });
   return { ...result, data: result.data as Body<GetConfig200> | undefined };
 }
 
@@ -117,7 +119,9 @@ export function useInfo(params: InfoParams) {
 // ─── Auth / user ─────────────────────────────────────────────────────────────
 
 export function useGetYou() {
-  const result = useGetYouRaw();
+  // retry: false — 401 means "not signed in", not a transient error.
+  // Retrying would compound the redirect loop triggered by onUnauthorized.
+  const result = useGetYouRaw(undefined, { query: { retry: false } });
   return { ...result, data: result.data as Body<GetYou200> | undefined };
 }
 
