@@ -9,8 +9,15 @@
 */
 
 import moment from "moment";
-import { useMemo, useState } from "react";
-import { Container, Dimmer, Dropdown, Icon, Loader } from "semantic-ui-react";
+import { useMemo } from "react";
+import {
+  Container,
+  Dimmer,
+  Dropdown,
+  Icon,
+  Loader,
+  Message,
+} from "semantic-ui-react";
 
 import {
   useGetWorkflows,
@@ -18,7 +25,6 @@ import {
   useGetConfig,
   useGetYou,
   useGetUsersSharedWithYou,
-  getGetWorkflowsQueryKey,
 } from "~/api/hooks";
 import { parseWorkflows } from "~/util";
 import { Title, Pagination, Search } from "~/components";
@@ -31,7 +37,9 @@ import { WORKFLOW_LIST_PAGE_SIZE_OPTIONS } from "./workflowListQuery";
 import styles from "./WorkflowList.module.scss";
 
 export function userHasAnyWorkflows(workflowsData: unknown): boolean {
-  const userHasWorkflows = (workflowsData as any)?.user_has_workflows;
+  const userHasWorkflows =
+    (workflowsData as any)?.user_has_workflows ??
+    (workflowsData as any)?.users_has_workflows;
   if (typeof userHasWorkflows === "boolean") return userHasWorkflows;
   return ((workflowsData as any)?.total ?? 0) > 0;
 }
@@ -46,7 +54,6 @@ export default function WorkflowListPage() {
 
 function Workflows() {
   const currentUTCTime = () => moment.utc().format("HH:mm:ss [UTC]");
-  const [refreshedAt] = useState(currentUTCTime());
   const { data: configData } = useGetConfig();
   const { data: youData } = useGetYou();
   const { data: usersSharedWithYouData } = useGetUsersSharedWithYou();
@@ -95,14 +102,19 @@ function Workflows() {
     ...(requestParams.type ? { type: requestParams.type } : {}),
   };
 
-  const { data: workflowsData, isLoading: loading } = useGetWorkflows(
-    workflowParams,
-    {
-      query: {
-        refetchInterval: reanaToken && pollingSecs ? pollingSecs * 1000 : false,
-      },
+  const {
+    data: workflowsData,
+    isError: workflowsError,
+    error,
+    dataUpdatedAt,
+    isLoading,
+    isPlaceholderData,
+  } = useGetWorkflows(workflowParams, {
+    query: {
+      placeholderData: (previousData) => previousData,
+      refetchInterval: reanaToken && pollingSecs ? pollingSecs * 1000 : false,
     },
-  );
+  });
 
   const workflowArray = useMemo(
     () =>
@@ -114,12 +126,34 @@ function Workflows() {
 
   const workflowsCount = workflowsData?.total ?? 0;
   const hasUserWorkflows = userHasAnyWorkflows(workflowsData);
+  const initialLoading = isLoading && !workflowsData;
+  const listLoading = isPlaceholderData;
+  const refreshedAt = dataUpdatedAt
+    ? moment.utc(dataUpdatedAt).format("HH:mm:ss [UTC]")
+    : currentUTCTime();
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <Dimmer active inverted>
         <Loader>Loading workflows...</Loader>
       </Dimmer>
+    );
+  }
+
+  if (workflowsError) {
+    const message =
+      (error as any)?.response?.data?.message ||
+      (error as any)?.message ||
+      "Could not load workflows.";
+    return (
+      <Container text className={styles["workflow-list-container"]}>
+        <Message
+          error
+          icon="warning sign"
+          header="An error has occurred"
+          content={message}
+        />
+      </Container>
     );
   }
 
@@ -163,8 +197,8 @@ function Workflows() {
           sortDir={sort}
           setSortDir={setSort}
         />
-        <WorkflowList workflows={workflowArray} loading={loading} />
-        {!loading && (
+        <WorkflowList workflows={workflowArray} loading={listLoading} />
+        {!listLoading && (
           <div className={styles.paginationRow}>
             {/* To emulate size of page-size dropdown and ensure page buttons stay in middle of screen */}
             <div className={styles.pageSizeNotVisible}>
