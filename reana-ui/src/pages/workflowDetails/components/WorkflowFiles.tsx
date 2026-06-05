@@ -67,6 +67,14 @@ function closePreviewParams(prev: URLSearchParams): URLSearchParams {
   return next;
 }
 
+export function getErrorStatus(error: unknown): number | undefined {
+  return (error as any)?.response?.status ?? (error as any)?.status;
+}
+
+export function isDeletedWorkspaceError(error: unknown): boolean {
+  return getErrorStatus(error) === 404;
+}
+
 export default function WorkflowFiles({
   id,
   page = 1,
@@ -90,11 +98,24 @@ export default function WorkflowFiles({
     [page],
   );
 
-  const { data: filesData, isLoading: loading } = useGetFiles(id, {
-    page: pagination.page,
-    size: pagination.size,
-    search: searchQuery || undefined,
-  });
+  const {
+    data: filesData,
+    error: filesError,
+    isLoading: loading,
+  } = useGetFiles(
+    id,
+    {
+      page: pagination.page,
+      size: pagination.size,
+      search: searchQuery || undefined,
+    },
+    {
+      query: {
+        retry: (failureCount, error) =>
+          !isDeletedWorkspaceError(error) && failureCount < 3,
+      },
+    },
+  );
 
   const filesCount = filesData?.total ?? 0;
 
@@ -112,10 +133,14 @@ export default function WorkflowFiles({
   }, [searchParams, id]);
 
   useEffect(() => {
+    if (isDeletedWorkspaceError(filesError)) {
+      setFiles(null);
+      return;
+    }
     if (filesData?.items !== undefined) {
       setFiles(parseFiles(filesData.items as any[]));
     }
-  }, [filesData]);
+  }, [filesData, filesError]);
 
   /**
    * Performs the sorting when a column header is clicked

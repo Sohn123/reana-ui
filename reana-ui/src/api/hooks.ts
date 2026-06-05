@@ -102,6 +102,17 @@ function normalizeSearchParam(search: string | undefined): string | undefined {
   return formatSearch(search) ?? undefined;
 }
 
+export function normalizeUsersResponse<T extends Record<string, unknown>>(
+  data: T | undefined,
+  legacyKey: string,
+): (T & { users?: unknown }) | undefined {
+  if (!data) return undefined;
+  return {
+    ...data,
+    users: data.users ?? data[legacyKey],
+  };
+}
+
 // ─── Cluster / infra ─────────────────────────────────────────────────────────
 
 export function useGetConfig() {
@@ -166,7 +177,10 @@ export function useGetUsersSharedWithYou() {
   const result = useGetUsersSharedWithYouRaw();
   return {
     ...result,
-    data: result.data as Body<GetUsersSharedWithYou200> | undefined,
+    data: normalizeUsersResponse(
+      result.data as Body<GetUsersSharedWithYou200> | undefined,
+      "users_shared_with_you",
+    ) as Body<GetUsersSharedWithYou200> | undefined,
   };
 }
 
@@ -174,7 +188,10 @@ export function useGetUsersYouSharedWith() {
   const result = useGetUsersYouSharedWithRaw();
   return {
     ...result,
-    data: result.data as Body<GetUsersYouSharedWith200> | undefined,
+    data: normalizeUsersResponse(
+      result.data as Body<GetUsersYouSharedWith200> | undefined,
+      "users_you_shared_with",
+    ) as Body<GetUsersYouSharedWith200> | undefined,
   };
 }
 
@@ -193,8 +210,16 @@ export function useGetWorkflowLogs(
   };
 }
 
-export function useGetFiles(workflowIdOrName: string, params: GetFilesParams) {
-  const result = useGetFilesRaw(workflowIdOrName, normalizeFilesParams(params));
+export function useGetFiles(
+  workflowIdOrName: string,
+  params: GetFilesParams,
+  opts?: QueryOpts<Body<GetFiles200>>,
+) {
+  const result = useGetFilesRaw(
+    workflowIdOrName,
+    normalizeFilesParams(params),
+    opts as any,
+  );
   return { ...result, data: result.data as Body<GetFiles200> | undefined };
 }
 
