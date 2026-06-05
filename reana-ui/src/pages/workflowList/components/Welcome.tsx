@@ -9,24 +9,19 @@
 */
 
 import moment from "moment";
-import { useDispatch, useSelector } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button, Container, Icon } from "semantic-ui-react";
 
-import { requestToken } from "~/actions";
-import {
-  getConfig,
-  getReanaToken,
-  getReanaTokenStatus,
-  getReanaTokenRequestedAt,
-  loadingTokenStatus,
-} from "~/selectors";
+import { useGetYou, useGetConfig } from "~/api/hooks";
+import client from "~/client";
 import { CodeSnippet, Title } from "~/components";
 import { api } from "~/config";
 
 import styles from "./Welcome.module.scss";
 
 export default function Welcome() {
-  const reanaToken = useSelector(getReanaToken) as any;
+  const { data: youData } = useGetYou();
+  const reanaToken = youData?.reana_token?.value;
   return (
     <Container text className={styles["container"]}>
       <Title as="h2">Welcome to REANA!</Title>
@@ -36,7 +31,7 @@ export default function Welcome() {
 }
 
 function WelcomeMsg() {
-  const config = useSelector(getConfig) as any;
+  const config = useGetConfig().data ?? ({} as any);
   return (
     <div>
       {config.cernSSO ? <WelcomeCERN /> : <WelcomeRegular />}
@@ -83,7 +78,7 @@ function WelcomeRegular() {
 }
 
 function WelcomeCERN() {
-  const config = useSelector(getConfig) as any;
+  const config = useGetConfig().data ?? ({} as any);
   return (
     <>
       <p>
@@ -103,7 +98,8 @@ function WelcomeCERN() {
 }
 
 function WelcomeEnvars() {
-  const reanaToken = useSelector(getReanaToken) as any;
+  const { data: youData } = useGetYou();
+  const reanaToken = youData?.reana_token?.value;
   return (
     <>
       <div>export REANA_SERVER_URL={api}</div>
@@ -116,12 +112,15 @@ function WelcomeEnvars() {
 }
 
 export function WelcomeNoTokenMsg() {
-  const tokenStatus = useSelector(getReanaTokenStatus) as any;
-  const tokenRequestedAt = useSelector(getReanaTokenRequestedAt) as any;
-  const loading = useSelector(loadingTokenStatus) as any;
-  const dispatch = useDispatch<any>();
+  const queryClient = useQueryClient();
+  const { data: youData, isLoading } = useGetYou();
+  const tokenStatus = youData?.reana_token?.status;
+  const tokenRequestedAt = youData?.reana_token?.requested_at;
 
-  const handleRequestToken = () => dispatch(requestToken());
+  const handleRequestToken = async () => {
+    await client.requestToken().catch(() => {});
+    queryClient.invalidateQueries({ queryKey: ["/api/you"] });
+  };
 
   return tokenStatus === "requested" ? (
     <div>
@@ -142,7 +141,7 @@ export function WelcomeNoTokenMsg() {
       <Button
         content="Request token"
         onClick={handleRequestToken}
-        loading={loading}
+        loading={isLoading}
       />
     </div>
   );

@@ -9,12 +9,11 @@
 */
 
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button, Checkbox, Icon, Message, Modal } from "semantic-ui-react";
 
 import client from "~/client";
-import { triggerNotification, errorActionCreator } from "~/actions";
+import { useNotification } from "~/NotificationContext";
 import { ParsedWorkflow } from "~/util";
 
 interface Props {
@@ -28,7 +27,7 @@ export default function WorkflowPruneModal({
   isOpen,
   onClose,
 }: Props) {
-  const dispatch = useDispatch<any>();
+  const { notify, notifyError } = useNotification();
   const queryClient = useQueryClient();
   const [includeInputs, setIncludeInputs] = useState<boolean>(false);
   const [includeOutputs, setIncludeOutputs] = useState<boolean>(false);
@@ -48,10 +47,10 @@ export default function WorkflowPruneModal({
         includeOutputs,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
-      dispatch(triggerNotification("Success!", (resp.data as any).message));
+      notify("Success!", (resp.data as any).message);
       onClose();
     } catch (err) {
-      dispatch(errorActionCreator(err));
+      notifyError(err);
       // Keep modal open on error
     }
   };

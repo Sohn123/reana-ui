@@ -9,7 +9,6 @@
 */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch } from "react-redux";
 import {
   Button,
   Form,
@@ -20,7 +19,7 @@ import {
   Modal,
 } from "semantic-ui-react";
 
-import { triggerNotification, errorActionCreator } from "~/actions";
+import { useNotification } from "~/NotificationContext";
 import { useGetConfig } from "~/api/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import client from "~/client";
@@ -44,7 +43,7 @@ export default function InteractiveSessionModal({
   isOpen,
   onClose,
 }: Props) {
-  const dispatch = useDispatch<any>();
+  const { notify, notifyError } = useNotification();
   const queryClient = useQueryClient();
   const config = useGetConfig().data ?? ({} as any);
   const environments: any = config.interactiveSessions?.environments ?? {};
@@ -171,18 +170,16 @@ export default function InteractiveSessionModal({
       })
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
-        dispatch(
-          triggerNotification(
-            "Success!",
-            "The interactive session has been created. " +
-              "However, it could take several minutes to start the Jupyter Notebook. " +
-              "Click on the Jupyter notebook badge to access it. " +
-              inactivityWarning,
-          ),
+        notify(
+          "Success!",
+          "The interactive session has been created. " +
+            "However, it could take several minutes to start the Jupyter Notebook. " +
+            "Click on the Jupyter notebook badge to access it. " +
+            inactivityWarning,
         );
       })
       .catch((err) => {
-        dispatch(errorActionCreator(err));
+        notifyError(err);
       })
       .finally(onCloseModal);
   };

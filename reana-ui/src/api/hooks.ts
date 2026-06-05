@@ -34,6 +34,7 @@ export {
   getGetWorkflowShareStatusQueryKey,
   getGetWorkflowRetentionRulesQueryKey,
   getGetWorkflowSpecificationQueryKey,
+  getGetYouQueryKey,
 } from "./generated";
 
 // Re-export params types so components don't need to import generated.ts

@@ -9,26 +9,31 @@
 */
 
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import { useGetConfig } from "~/api/hooks";
 import { Button, Divider, Segment } from "semantic-ui-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import SignForm from "./components/SignForm";
 import SignContainer from "./components/SignContainer";
-import { USER_OAUTH_SIGNIN_URL } from "~/client";
-import { triggerNotification, userSignin } from "~/actions";
-import { useSubmit, useDocumentTitle } from "~/hooks";
+import client, { USER_OAUTH_SIGNIN_URL } from "~/client";
+import { useNotification } from "~/NotificationContext";
+import { useDocumentTitle } from "~/hooks";
 
 export default function Signin() {
   useDocumentTitle("Sign in");
-  const handleSubmit = useSubmit(userSignin);
+  const { notify } = useNotification();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const location = useLocation();
   const config = useGetConfig().data ?? ({} as any);
-  const dispatch = useDispatch<any>();
   const [formData, setFormData] = useState<{ email: string; password: string }>(
     { email: "", password: "" },
   );
-  const location = useLocation();
+  const [signErrors, setSignErrors] = useState<
+    Array<{ field: string; message: string }>
+  >([]);
+
   const tokenIssuancePolicyRaw: string = String(
     config.accessTokenIssuancePolicy ?? "manual",
   )
@@ -53,11 +58,9 @@ export default function Signin() {
     // We should upgrade Invenio-OAuthClient to latest version that supports REST apps
     // and adapt the whole workflow.
     if (shouldNotifyEmailConfirmation) {
-      dispatch(
-        triggerNotification(
-          "Success!",
-          "User registered. Please confirm your email by clicking on the link we sent you.",
-        ),
+      notify(
+        "Success!",
+        "User registered. Please confirm your email by clicking on the link we sent you.",
       );
     }
   };
@@ -65,6 +68,29 @@ export default function Signin() {
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { target } = event;
     setFormData({ ...formData, [target.name]: target.value });
+  };
+
+  const handleSignin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignErrors([]);
+    try {
+      await client.signIn(formData);
+      queryClient.invalidateQueries({ queryKey: ["/api/you"] });
+      const from = (location.state as any)?.from || { pathname: "/" };
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      if (err?.response?.data?.errors) {
+        setSignErrors(err.response.data.errors);
+      } else {
+        setSignErrors([
+          {
+            field: "email",
+            message: err?.response?.data?.message || "Sign-in failed",
+          },
+        ]);
+      }
+      setFormData({ ...formData, password: "" });
+    }
   };
 
   return (
@@ -121,9 +147,10 @@ export default function Signin() {
         {config.localUsers && (
           <SignForm
             submitText="Sign in"
-            handleSubmit={(e) => handleSubmit(e, formData, setFormData)}
+            handleSubmit={handleSignin}
             formData={formData}
             handleInputChange={handleInputChange}
+            errors={signErrors}
           />
         )}
       </Segment>

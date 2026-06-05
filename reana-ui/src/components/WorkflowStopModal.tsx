@@ -8,12 +8,11 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { useDispatch } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button, Modal, Message, Icon } from "semantic-ui-react";
 
 import client from "~/client";
-import { triggerNotification, errorActionCreator } from "~/actions";
+import { useNotification } from "~/NotificationContext";
 import { ParsedWorkflow } from "~/util";
 
 interface Props {
@@ -27,7 +26,7 @@ export default function WorkflowStopModal({
   isOpen,
   onClose,
 }: Props) {
-  const dispatch = useDispatch<any>();
+  const { notify, notifyError } = useNotification();
   const queryClient = useQueryClient();
   const { id, name, run } = workflow;
 
@@ -35,10 +34,10 @@ export default function WorkflowStopModal({
     try {
       const resp = await client.stopWorkflow(id);
       queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
-      dispatch(triggerNotification("Success!", (resp.data as any).message));
+      notify("Success!", (resp.data as any).message);
       onClose();
     } catch (err) {
-      dispatch(errorActionCreator(err));
+      notifyError(err);
     }
   };
 

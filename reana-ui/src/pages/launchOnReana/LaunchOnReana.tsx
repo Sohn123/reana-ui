@@ -8,17 +8,16 @@
 
 import { useState, useMemo } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
 import { Button, Container, Icon, Loader, Table } from "semantic-ui-react";
 
 import BasePage from "../BasePage";
 import Welcome from "./Welcome";
 import { Box, CodeSnippet, Title } from "~/components";
-import { errorActionCreator, triggerNotification } from "~/actions";
 import client from "~/client";
 import { useQuery } from "~/hooks";
 import { LAUNCH_ON_REANA_PARAMS_WHITELIST } from "~/config";
-import { getReanaToken } from "~/selectors";
+import { useGetYou } from "~/api/hooks";
+import { useNotification } from "~/NotificationContext";
 
 import styles from "./LaunchOnReana.module.scss";
 
@@ -26,12 +25,12 @@ export const DEFAULT_WORKFLOW_NAME = "workflow";
 export const DEFAULT_SPEC_FILENAME = "reana.yaml";
 
 export default function LaunchOnReana() {
-  const reanaToken = useSelector(getReanaToken) as string | null;
+  const reanaToken = useGetYou().data?.reana_token?.value ?? null;
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
   const query = useQuery();
   filterParams(query);
-  const dispatch = useDispatch<any>();
+  const { notify, notifyError } = useNotification();
 
   function handleLaunch(): void {
     setLoading(true);
@@ -68,19 +67,17 @@ export default function LaunchOnReana() {
             warningMessages.forEach((warning) => {
               message += ` ${warning}`;
             });
-            dispatch(
-              triggerNotification("Workflow submitted with warnings", message, {
-                warning: true,
-              }),
-            );
+            notify("Workflow submitted with warnings", message, {
+              warning: true,
+            });
           } else {
-            dispatch(triggerNotification("Workflow submitted", message));
+            notify("Workflow submitted", message);
           }
           navigate(`/details/${workflowId}`);
         },
       )
       .catch((err) => {
-        dispatch(errorActionCreator(err));
+        notifyError(err);
       })
       .finally(() => setLoading(false));
   }
@@ -136,21 +133,19 @@ export default function LaunchOnReana() {
       try {
         return JSON.parse(query.get("parameters"));
       } catch {
-        dispatch(
-          triggerNotification(
-            "An error has occurred",
-            `Invalid JSON workflow parameters provided: ${query.get(
-              "parameters",
-            )}`,
-            { error: true },
-          ),
+        notify(
+          "An error has occurred",
+          `Invalid JSON workflow parameters provided: ${query.get(
+            "parameters",
+          )}`,
+          { error: true },
         );
         query.delete("parameters");
       }
       return null;
     }
     return fn(query);
-  }, [dispatch, query]);
+  }, [notify, query]);
 
   if (!reanaToken) {
     return <Navigate to="/" />;

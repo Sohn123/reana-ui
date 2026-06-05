@@ -9,11 +9,10 @@
 */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button, Checkbox, Icon, Message, Modal } from "semantic-ui-react";
 
-import { triggerNotification } from "~/actions";
+import { useNotification } from "~/NotificationContext";
 import client from "~/client";
 import styles from "./WorkflowDeleteModal.module.css";
 import {
@@ -203,7 +202,7 @@ export default function WorkflowDeleteModal({
   isOpen,
   onClose,
 }: Props) {
-  const dispatch = useDispatch<any>();
+  const { notify } = useNotification();
   const queryClient = useQueryClient();
 
   const [allRuns, setAllRuns] = useState(false);
@@ -295,7 +294,7 @@ export default function WorkflowDeleteModal({
       if (allRuns) {
         const resp = await client.deleteWorkflow(id, { allRuns: true });
         queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
-        dispatch(triggerNotification("Success!", (resp.data as any).message));
+        notify("Success!", (resp.data as any).message);
         onCloseModal();
         return;
       }
@@ -360,7 +359,7 @@ export default function WorkflowDeleteModal({
         workspace: true,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
-      dispatch(triggerNotification("Success!", (resp.data as any).message));
+      notify("Success!", (resp.data as any).message);
       onCloseModal();
     } catch (err) {
       console.error("Error deleting workflow", err);
@@ -371,7 +370,7 @@ export default function WorkflowDeleteModal({
   }, [
     allRuns,
     confirmRelatedDeletion,
-    dispatch,
+    notify,
     queryClient,
     hasRelatedRuns,
     id,

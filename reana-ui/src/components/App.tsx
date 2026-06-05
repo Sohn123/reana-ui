@@ -9,7 +9,6 @@
 */
 
 import React from "react";
-import isEmpty from "lodash/isEmpty";
 import {
   Navigate,
   BrowserRouter,
@@ -18,16 +17,9 @@ import {
   useParams,
   useLocation,
 } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { Dimmer, Loader } from "semantic-ui-react";
 
-import {
-  getUserFetchError,
-  isSignedIn,
-  isSignupHidden,
-  loadingUser,
-  loadingConfig,
-} from "~/selectors";
+import { useGetYou, useGetConfig } from "~/api/hooks";
 import Confirm from "~/pages/signin/Confirm";
 import Signin from "~/pages/signin/Signin";
 import Signup from "~/pages/signin/Signup";
@@ -48,8 +40,16 @@ interface RequireAuthProps {
 }
 
 function RequireAuth({ children }: RequireAuthProps): React.ReactElement {
-  const signedIn = useSelector(isSignedIn);
+  const { data: youData, isLoading } = useGetYou();
+  const signedIn = !!youData?.email;
   const location = useLocation();
+  if (isLoading) {
+    return (
+      <Dimmer active inverted>
+        <Loader inline="centered">Loading...</Loader>
+      </Dimmer>
+    );
+  }
   if (signedIn) {
     return children as React.ReactElement;
   } else {
@@ -64,14 +64,23 @@ function RedirectDetailsToWorkflows() {
 }
 
 export default function App() {
-  const userLoading = useSelector(loadingUser);
-  const configLoading = useSelector(loadingConfig);
+  const {
+    data: youData,
+    isLoading: userLoading,
+    isError: userError,
+  } = useGetYou();
+  const { data: configData, isLoading: configLoading } = useGetConfig();
   const loading = userLoading || configLoading;
-  const signedIn = useSelector(isSignedIn);
-  const signupHidden = useSelector(isSignupHidden);
-  const error = useSelector(getUserFetchError);
-  if (!isEmpty(error)) {
-    return <Error title={error.statusText} message={error.message} />;
+  const signedIn = !!youData?.email;
+  const signupHidden = (configData as any)?.hideSignup ?? false;
+
+  if (userError) {
+    return (
+      <Error
+        title="Authorization Error"
+        message="Could not connect to the server."
+      />
+    );
   }
   return (
     <BrowserRouter>

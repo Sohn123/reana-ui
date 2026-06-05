@@ -9,19 +9,20 @@
 */
 
 import React, { useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { Container, Message, Transition } from "semantic-ui-react";
 
-import { clearNotification } from "~/actions";
-import { getNotification } from "~/selectors";
+import { useNotification } from "~/NotificationContext";
 
 import styles from "./Notification.module.scss";
 
 const AUTO_CLOSE_TIMEOUT = 16000;
 
 interface Props {
+  /** Override icon (falls back to notification type icon). */
   icon?: string | null;
+  /** Override header (falls back to notification header). */
   header?: string | null;
+  /** Inline message — shown instead of any context notification. */
   message?: string | React.ReactNode | null;
   closable?: boolean;
   error?: boolean;
@@ -38,12 +39,10 @@ export default function Notification({
   success = false,
   warning = false,
 }: Props) {
-  const dispatch = useDispatch();
-  const notification = useSelector(getNotification);
+  const { notification, clear } = useNotification();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const hide = () => dispatch(clearNotification);
-  const visible = message || notification ? true : false;
+  const visible = !!(message || notification);
   const actionIcon = notification?.isError
     ? "warning sign"
     : notification?.isWarning
@@ -52,8 +51,9 @@ export default function Notification({
 
   if (closable && visible) {
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => hide(), AUTO_CLOSE_TIMEOUT);
+    timer.current = setTimeout(clear, AUTO_CLOSE_TIMEOUT);
   }
+
   return (
     <Transition visible={visible} duration={300}>
       <Container text className={styles.container}>
@@ -61,7 +61,7 @@ export default function Notification({
           icon={icon || actionIcon}
           header={header || notification?.header}
           content={message || notification?.message}
-          onDismiss={closable ? hide : null}
+          onDismiss={closable ? clear : null}
           size="small"
           error={error || (notification && notification.isError)}
           success={

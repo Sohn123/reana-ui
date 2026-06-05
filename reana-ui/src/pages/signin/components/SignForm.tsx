@@ -9,10 +9,7 @@
 */
 
 import React from "react";
-import { useSelector } from "react-redux";
 import { Button, Form, Input } from "semantic-ui-react";
-
-import { getUserSignErrors } from "~/selectors";
 
 import styles from "./SignForm.module.scss";
 
@@ -21,11 +18,17 @@ interface FormData {
   password: string;
 }
 
+interface SignError {
+  field: string;
+  message: string;
+}
+
 interface Props {
   submitText: string;
   handleSubmit: (e: React.FormEvent) => void;
   formData: FormData;
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  errors?: SignError[];
 }
 
 export default function SignForm({
@@ -33,9 +36,8 @@ export default function SignForm({
   handleSubmit,
   formData,
   handleInputChange,
+  errors = [],
 }: Props) {
-  const errors = useSelector(getUserSignErrors);
-
   /**
    * Gets Form.Field compatible error prop per field/
    * @param {String} field Name of the field to get errors from

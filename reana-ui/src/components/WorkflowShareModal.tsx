@@ -9,7 +9,6 @@
 */
 
 import React, { useCallback, useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import SemanticDatepicker from "react-semantic-ui-datepickers";
 import {
@@ -185,7 +184,6 @@ export default function WorkflowShareModal({
   isOpen,
   onClose,
 }: Props) {
-  const dispatch = useDispatch<any>();
   const queryClient = useQueryClient();
   const [linkCopied, setLinkCopied] = useState(false);
   const [dropDownOptions, setDropDownOptions] = useState<

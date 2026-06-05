@@ -9,26 +9,53 @@
 */
 
 import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Segment } from "semantic-ui-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import SignForm from "./components/SignForm";
 import SignContainer from "./components/SignContainer";
 import { useGetConfig } from "~/api/hooks";
-import { userSignup } from "../../actions";
-import { useSubmit, useDocumentTitle } from "../../hooks";
+import client from "~/client";
+import { useDocumentTitle } from "~/hooks";
 
 export default function Signup() {
   useDocumentTitle("Sign up");
-  const handleSubmit = useSubmit(userSignup);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const config = useGetConfig().data ?? ({} as any);
   const [formData, setFormData] = useState<{ email: string; password: string }>(
     { email: "", password: "" },
   );
+  const [signErrors, setSignErrors] = useState<
+    Array<{ field: string; message: string }>
+  >([]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { target } = event;
     setFormData({ ...formData, [target.name]: target.value });
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignErrors([]);
+    try {
+      await client.signUp(formData);
+      queryClient.invalidateQueries({ queryKey: ["/api/you"] });
+      navigate("/signin", { replace: true });
+    } catch (err: any) {
+      if (err?.response?.data?.errors) {
+        setSignErrors(err.response.data.errors);
+      } else {
+        setSignErrors([
+          {
+            field: "email",
+            message: err?.response?.data?.message || "Sign-up failed",
+          },
+        ]);
+      }
+      setFormData({ ...formData, password: "" });
+    }
   };
 
   return (
@@ -37,9 +64,10 @@ export default function Signup() {
         {config.localUsers && (
           <SignForm
             submitText="Sign up"
-            handleSubmit={(e) => handleSubmit(e, formData, setFormData)}
+            handleSubmit={handleSignup}
             formData={formData}
             handleInputChange={handleInputChange}
+            errors={signErrors}
           />
         )}
       </Segment>

@@ -9,21 +9,28 @@
 */
 
 import { useEffect } from "react";
-import { useDispatch } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { confirmUserEmail } from "../../actions";
+import client from "~/client";
+import { useNotification } from "~/NotificationContext";
 
 export default function Confirm() {
   const { token } = useParams<{ token: string }>();
-  const dispatch = useDispatch<any>();
   const navigate = useNavigate();
+  const { notify, notifyError } = useNotification();
 
   useEffect(() => {
-    dispatch(confirmUserEmail(token)).then(() =>
-      navigate("/", { replace: true }),
-    );
-  }, [dispatch, token, navigate]);
+    client
+      .confirmEmail({ token })
+      .then((resp) => {
+        notify("Success!", (resp.data as any)?.message || "Email confirmed.");
+        navigate("/", { replace: true });
+      })
+      .catch((err: any) => {
+        notifyError(err);
+        navigate("/", { replace: true });
+      });
+  }, [token, navigate]);
 
   return null;
 }

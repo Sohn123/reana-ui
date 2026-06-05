@@ -9,20 +9,26 @@
 */
 
 import { Image, Icon, Popup, List } from "semantic-ui-react";
-import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
-import { getUserEmail } from "~/selectors";
+import { useGetYou } from "~/api/hooks";
+import client from "~/client";
 import LogoImg from "~/images/logo-reana.svg";
-import { userSignout } from "~/actions";
 import NotificationBell from "./NotificationBell";
 
 import styles from "./TopHeader.module.scss";
 
 export default function TopHeader() {
-  const dispatch: any = useDispatch();
-  const email: string = useSelector(getUserEmail) as string;
-  const signOut: () => void = () => dispatch(userSignout());
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const email: string = useGetYou().data?.email ?? "";
+
+  const signOut = async () => {
+    await client.signOut().catch(() => {});
+    queryClient.clear();
+    navigate("/signin", { replace: true });
+  };
 
   return (
     <header className={styles["top-header"]}>

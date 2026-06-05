@@ -9,11 +9,10 @@
 */
 
 import { useState } from "react";
-import { useDispatch } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import { Icon, Menu, Popup } from "semantic-ui-react";
 
-import { triggerNotification, errorActionCreator } from "~/actions";
+import { useNotification } from "~/NotificationContext";
 import { useGetYou } from "~/api/hooks";
 import client from "~/client";
 import { ParsedWorkflow } from "~/util";
@@ -38,7 +37,7 @@ export default function WorkflowActionsPopup({
   workflow,
   className = "",
 }: Props) {
-  const dispatch = useDispatch<any>();
+  const { notify, notifyError } = useNotification();
   const queryClient = useQueryClient();
   const userEmail = useGetYou().data?.email ?? "";
 
@@ -97,9 +96,9 @@ export default function WorkflowActionsPopup({
         try {
           const resp = await client.closeInteractiveSession(id);
           queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
-          dispatch(triggerNotification("Success!", (resp.data as any).message));
+          notify("Success!", (resp.data as any).message);
         } catch (err) {
-          dispatch(errorActionCreator(err));
+          notifyError(err);
         }
       },
     });
@@ -154,9 +153,9 @@ export default function WorkflowActionsPopup({
             allRuns: false,
           });
           queryClient.invalidateQueries({ queryKey: ["/api/workflows"] });
-          dispatch(triggerNotification("Success!", (resp.data as any).message));
+          notify("Success!", (resp.data as any).message);
         } catch (err) {
-          dispatch(errorActionCreator(err));
+          notifyError(err);
         }
       },
     });
