@@ -153,7 +153,8 @@ export function serializeQueryToApiParams(
   let shared, sharedBy, sharedWith;
 
   if (query.category === "all") {
-    shared = false;
+    // Union of owned + shared-with-me workflows.
+    shared = true;
     sharedBy = undefined;
     sharedWith = undefined;
   } else if (query.category === "shared-with-me") {
