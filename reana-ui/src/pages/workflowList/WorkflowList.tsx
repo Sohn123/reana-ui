@@ -9,8 +9,7 @@
 */
 
 import moment from "moment";
-import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { Container, Dimmer, Dropdown, Icon, Loader } from "semantic-ui-react";
 
 import {
@@ -31,6 +30,12 @@ import { useWorkflowListQuery } from "./useWorkflowListQuery";
 import { WORKFLOW_LIST_PAGE_SIZE_OPTIONS } from "./workflowListQuery";
 import styles from "./WorkflowList.module.scss";
 
+export function userHasAnyWorkflows(workflowsData: unknown): boolean {
+  const userHasWorkflows = (workflowsData as any)?.user_has_workflows;
+  if (typeof userHasWorkflows === "boolean") return userHasWorkflows;
+  return ((workflowsData as any)?.total ?? 0) > 0;
+}
+
 export default function WorkflowListPage() {
   return (
     <BasePage title="Your workflows">
@@ -48,7 +53,6 @@ function Workflows() {
   const pollingSecs = (configData as any)?.polling_secs ?? 0;
   const reanaToken = youData?.reana_token?.value;
   const usersSharedWithYou = usersSharedWithYouData?.users ?? [];
-  const queryClient = useQueryClient();
   const {
     query,
     requestParams,
@@ -109,7 +113,7 @@ function Workflows() {
   );
 
   const workflowsCount = workflowsData?.total ?? 0;
-  const hasUserWorkflows = workflowsCount > 0;
+  const hasUserWorkflows = userHasAnyWorkflows(workflowsData);
 
   if (loading) {
     return (
