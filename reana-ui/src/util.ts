@@ -175,23 +175,27 @@ export function parseWorkflows(
   // Convert array into object to avoid traversing the whole array.
   const result = workflows.reduce<ParsedWorkflowMap>((obj, workflow) => {
     const info = workflow.name.split(".");
-    workflow.name = info.shift() as string;
-    workflow.run = info.join(".");
+    const name = info.shift() as string;
+    const run = info.join(".");
     const progress = workflow.progress.finished;
     const total = workflow.progress.total;
     const running = workflow.progress.running;
     const failed = workflow.progress.failed;
-    workflow.completed =
-      typeof progress === "object" && progress !== null ? progress.total : 0;
-    workflow.total = total.total;
-    workflow.running =
-      typeof running === "object" && running !== null ? running.total : 0;
-    workflow.failed =
-      typeof failed === "object" && failed !== null ? failed.total : 0;
-    workflow.launcherURL = workflow.launcher_url;
-    workflow.ownerEmail = workflow.owner_email;
-    workflow.sharedWith = workflow.shared_with ?? [];
-    const parsed = parseWorkflowDates(workflow as unknown as ParsedWorkflow);
+    const parsedWorkflow = {
+      ...workflow,
+      name,
+      run,
+      completed:
+        typeof progress === "object" && progress !== null ? progress.total : 0,
+      total: total.total,
+      running:
+        typeof running === "object" && running !== null ? running.total : 0,
+      failed: typeof failed === "object" && failed !== null ? failed.total : 0,
+      launcherURL: workflow.launcher_url,
+      ownerEmail: workflow.owner_email,
+      sharedWith: workflow.shared_with ?? [],
+    } as unknown as ParsedWorkflow;
+    const parsed = parseWorkflowDates(parsedWorkflow);
 
     obj[parsed.id as string] = parsed;
     return obj;
