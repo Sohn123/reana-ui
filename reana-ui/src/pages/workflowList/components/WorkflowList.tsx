@@ -10,7 +10,6 @@
 
 import { Loader, Message, Divider } from "semantic-ui-react";
 import { Link } from "react-router-dom";
-import { useSelector } from "react-redux";
 
 import {
   Box,
@@ -23,7 +22,7 @@ import {
   WorkflowActionsPopup,
   InteractiveSessionModal,
 } from "~/components";
-import { getUserEmail } from "~/selectors";
+import { useGetYou } from "~/api/hooks";
 import { ParsedWorkflow } from "~/util";
 
 import styles from "./WorkflowList.module.scss";
@@ -33,7 +32,7 @@ interface WorkflowListItemProps {
 }
 
 function WorkflowListItem({ workflow }: WorkflowListItemProps) {
-  const userEmail = useSelector(getUserEmail) as any;
+  const userEmail = useGetYou().data?.email ?? "";
   const isOwner = workflow.ownerEmail === userEmail;
   const sharedWith = workflow.sharedWith ?? [];
 

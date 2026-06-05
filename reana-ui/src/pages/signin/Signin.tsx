@@ -9,11 +9,11 @@
 */
 
 import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
+import { useGetConfig } from "~/api/hooks";
 import { Button, Divider, Segment } from "semantic-ui-react";
 import { Link, useLocation } from "react-router-dom";
 
-import { getConfig } from "~/selectors";
 import SignForm from "./components/SignForm";
 import SignContainer from "./components/SignContainer";
 import { USER_OAUTH_SIGNIN_URL } from "~/client";
@@ -23,7 +23,7 @@ import { useSubmit, useDocumentTitle } from "~/hooks";
 export default function Signin() {
   useDocumentTitle("Sign in");
   const handleSubmit = useSubmit(userSignin);
-  const config = useSelector(getConfig) as any;
+  const config = useGetConfig().data ?? ({} as any);
   const dispatch = useDispatch<any>();
   const [formData, setFormData] = useState<{ email: string; password: string }>(
     { email: "", password: "" },

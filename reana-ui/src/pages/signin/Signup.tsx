@@ -9,20 +9,19 @@
 */
 
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
 import { Segment } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 
 import SignForm from "./components/SignForm";
 import SignContainer from "./components/SignContainer";
-import { getConfig } from "../../selectors";
+import { useGetConfig } from "~/api/hooks";
 import { userSignup } from "../../actions";
 import { useSubmit, useDocumentTitle } from "../../hooks";
 
 export default function Signup() {
   useDocumentTitle("Sign up");
   const handleSubmit = useSubmit(userSignup);
-  const config = useSelector(getConfig) as any;
+  const config = useGetConfig().data ?? ({} as any);
   const [formData, setFormData] = useState<{ email: string; password: string }>(
     { email: "", password: "" },
   );

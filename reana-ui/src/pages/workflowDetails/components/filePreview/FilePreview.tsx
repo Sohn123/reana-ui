@@ -11,11 +11,10 @@
 import sortBy from "lodash/sortBy";
 import React, { Suspense, lazy, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { Button, Icon, Loader, Message, Modal } from "semantic-ui-react";
 
 import client, { WORKFLOW_FILE_URL } from "~/client";
-import { getConfig } from "~/selectors";
+import { useGetConfig } from "~/api/hooks";
 import { formatFileSize, getMimeType, parseFiles } from "~/util";
 import { CopyLinkButton } from "..";
 
@@ -206,7 +205,7 @@ export default function FilePreview({
   fileName,
   onClose,
 }: FilePreviewProps) {
-  const config: any = useSelector(getConfig);
+  const config = useGetConfig().data ?? ({} as any);
   const location = useLocation();
   const isSharedLink = !location.state?.internal;
   const [size, setSize] = useState<number | null>(null);

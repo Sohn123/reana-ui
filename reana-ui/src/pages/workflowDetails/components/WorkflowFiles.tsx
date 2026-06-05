@@ -11,7 +11,6 @@
 import sortBy from "lodash/sortBy";
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
 import {
   Button,
   Icon,
@@ -21,15 +20,10 @@ import {
   Table,
 } from "semantic-ui-react";
 
-import { fetchWorkflowFiles } from "~/actions";
+import { useGetFiles } from "~/api/hooks";
 import { WORKFLOW_FILE_URL } from "~/client";
 import { Pagination, Search } from "~/components";
-import {
-  getWorkflowFiles,
-  getWorkflowFilesCount,
-  getWorkflowRefresh,
-  loadingDetails,
-} from "~/selectors";
+import { parseFiles } from "~/util";
 import { CopyLinkButton, WorkflowRetentionRules } from ".";
 import FilePreview from "./filePreview/FilePreview";
 
@@ -78,12 +72,6 @@ export default function WorkflowFiles({
   page = 1,
   onPageChange,
 }: WorkflowFilesProps) {
-  const dispatch = useDispatch<any>();
-  const workflowRefresh: any = useSelector(getWorkflowRefresh);
-  const loading: any = useSelector(loadingDetails);
-  const _files: any = useSelector(getWorkflowFiles(id));
-  const filesCount: any = useSelector(getWorkflowFilesCount(id));
-
   const [files, setFiles] = useState<any[] | null | undefined>(undefined);
   const [sorting, setSorting] = useState<FileSortingState>({
     column: null,
@@ -102,6 +90,14 @@ export default function WorkflowFiles({
     [page],
   );
 
+  const { data: filesData, isLoading: loading } = useGetFiles(id, {
+    page: pagination.page,
+    size: pagination.size,
+    search: searchQuery || undefined,
+  });
+
+  const filesCount = filesData?.total ?? 0;
+
   // Sync filePreview state from URL params
   useEffect(() => {
     const urlSearch = searchParams.get("search") || "";
@@ -116,12 +112,10 @@ export default function WorkflowFiles({
   }, [searchParams, id]);
 
   useEffect(() => {
-    dispatch(fetchWorkflowFiles(id, pagination, searchQuery));
-  }, [dispatch, id, pagination, searchQuery, workflowRefresh]);
-
-  useEffect(() => {
-    setFiles(_files);
-  }, [_files]);
+    if (filesData?.items !== undefined) {
+      setFiles(parseFiles(filesData.items as any[]));
+    }
+  }, [filesData]);
 
   /**
    * Performs the sorting when a column header is clicked

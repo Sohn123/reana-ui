@@ -8,15 +8,15 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { Popup, Icon, List } from "semantic-ui-react";
 
-import { getUserQuota } from "~/selectors";
+import { useGetYou } from "~/api/hooks";
 import { getQuotaNotifications } from "~/pages/profile/components/Quota";
 
 export default function NotificationBell() {
-  const quota: any = useSelector(getUserQuota);
+  const { data: youData } = useGetYou();
+  const quota: any = youData?.quota ?? {};
   const notifications: any[] = getQuotaNotifications(quota);
   const hasNotifications = !!notifications.length;
   return (

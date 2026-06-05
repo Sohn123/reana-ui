@@ -8,16 +8,15 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { Icon } from "semantic-ui-react";
 
-import { getConfig } from "~/selectors";
+import { useGetConfig } from "~/api/hooks";
 
 import styles from "./Footer.module.scss";
 
 export default function Footer() {
-  const config: any = useSelector(getConfig);
+  const config = useGetConfig().data ?? ({} as any);
   return (
     <footer className={styles["footer-bottom"]}>
       <span className={styles["links"]}>

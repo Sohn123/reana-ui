@@ -13,8 +13,7 @@ import { Label, Popup } from "semantic-ui-react";
 import { JupyterNotebookIcon, DaskIcon } from "~/components";
 import { INTERACTIVE_SESSION_URL, DASK_DASHBOARD_URL } from "~/client";
 import { LauncherLabel } from "~/components";
-import { getReanaToken, getUserEmail } from "~/selectors";
-import { useSelector } from "react-redux";
+import { useGetYou } from "~/api/hooks";
 import { ParsedWorkflow } from "~/util";
 
 interface Props {
@@ -27,8 +26,9 @@ export default function WorkflowBadges({
   workflow,
   badgeSize = "tiny",
 }: Props) {
-  const reanaToken = useSelector(getReanaToken);
-  const userEmail = useSelector(getUserEmail);
+  const { data: youData } = useGetYou();
+  const reanaToken = youData?.reana_token?.value ?? "";
+  const userEmail = youData?.email ?? "";
   const { launcherURL, ownerEmail, sharedWith = [] } = workflow;
   const size = workflow.size as
     | { raw: number; human_readable: string }

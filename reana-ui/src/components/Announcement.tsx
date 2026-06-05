@@ -11,17 +11,16 @@
 import DOMPurify from "dompurify";
 import { useState } from "react";
 import { Icon } from "semantic-ui-react";
-import { useSelector } from "react-redux";
 
 import { ALLOWED_HTML_TAGS_ANNOUNCEMENT } from "~/config";
-import { getConfig } from "~/selectors";
+import { useGetConfig } from "~/api/hooks";
 
 import styles from "./Announcement.module.scss";
 
 export default function Announcement() {
   const hiddenAnnouncement: string | null =
     window.localStorage.getItem("hideAnnouncement");
-  const config: any = useSelector(getConfig);
+  const config = useGetConfig().data ?? ({} as any);
   const [hidden, setHidden] = useState<string | null | false>(
     hiddenAnnouncement === config.announcement && hiddenAnnouncement,
   );

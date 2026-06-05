@@ -9,9 +9,8 @@
 import React from "react";
 import { Button, Card, Container, Icon } from "semantic-ui-react";
 import { Link } from "react-router-dom";
-import { useSelector } from "react-redux";
 
-import { getConfig } from "~/selectors";
+import { useGetConfig } from "~/api/hooks";
 
 import exampleRootImg from "~/images/example-root.png";
 import exampleAtlasRecastImg from "~/images/example-atlas-recast.png";
@@ -41,9 +40,8 @@ const DEFAULT_DEMO_REPOSITORIES = [
 ];
 
 export default function Welcome() {
-  const { docsURL, launcherExamples: repositoriesFromConfig } = useSelector(
-    getConfig,
-  ) as any;
+  const { docsURL, launcherExamples: repositoriesFromConfig } =
+    useGetConfig().data ?? ({} as any);
 
   // If the REANA admin has not specified a list of demo repositories, use the
   // default ones.
