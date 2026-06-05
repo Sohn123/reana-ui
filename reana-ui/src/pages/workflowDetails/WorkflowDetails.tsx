@@ -16,7 +16,6 @@ import {
   useGetConfig,
   useGetWorkflowSpecification,
   useInfo,
-  getGetWorkflowsQueryKey,
   WorkflowsParams,
 } from "~/api/hooks";
 import { NON_FINISHED_STATUSES } from "~/config";
@@ -37,6 +36,18 @@ import styles from "./WorkflowDetails.module.scss";
 
 const FINISHED_STATUSES = ["finished", "failed", "stopped", "deleted"];
 
+export function getWorkflowDetailsParams(
+  workflowId: string | undefined,
+): WorkflowsParams {
+  return {
+    workflow_id_or_name: workflowId,
+    verbose: true,
+    page: 1,
+    size: 1,
+    shared: true,
+  };
+}
+
 export default function WorkflowDetails() {
   const {
     id: workflowId,
@@ -48,12 +59,7 @@ export default function WorkflowDetails() {
 
   const pollingSecs = Number(useGetConfig().data?.polling_secs) || 0;
 
-  const params: WorkflowsParams = {
-    workflow_id_or_name: workflowId,
-    verbose: true,
-    page: 1,
-    size: 1,
-  };
+  const params = getWorkflowDetailsParams(workflowId);
   const { data: workflowsData, isLoading: loading } = useGetWorkflows(params, {
     query: {
       refetchInterval: (query) => {
