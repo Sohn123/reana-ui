@@ -9,7 +9,7 @@
 */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   Button,
   Form,
@@ -20,15 +20,9 @@ import {
   Modal,
 } from "semantic-ui-react";
 
-import {
-  closeInteractiveSessionModal,
-  openInteractiveSession,
-} from "~/actions";
-import {
-  getConfig,
-  getInteractiveSessionModalItem,
-  getInteractiveSessionModalOpen,
-} from "~/selectors";
+import { openInteractiveSession } from "~/actions";
+import { useGetConfig } from "~/api/hooks";
+import { ParsedWorkflow } from "~/util";
 
 const EnvironmentType = {
   Recommended: "recommended",
@@ -37,13 +31,20 @@ const EnvironmentType = {
 type EnvironmentTypeValue =
   (typeof EnvironmentType)[keyof typeof EnvironmentType];
 
-export default function InteractiveSessionModal() {
-  const dispatch = useDispatch<any>();
-  const open = useSelector(getInteractiveSessionModalOpen);
-  const workflow = useSelector(getInteractiveSessionModalItem);
+interface Props {
+  workflow: ParsedWorkflow;
+  isOpen: boolean;
+  onClose: () => void;
+}
 
-  const config: any = useSelector(getConfig);
-  const environments: any = config.interactiveSessions.environments;
+export default function InteractiveSessionModal({
+  workflow,
+  isOpen,
+  onClose,
+}: Props) {
+  const dispatch = useDispatch<any>();
+  const config = useGetConfig().data ?? ({} as any);
+  const environments: any = config.interactiveSessions?.environments ?? {};
   const allSessionTypes: string[] = useMemo(
     () => Object.keys(environments).sort(),
     [environments],
@@ -89,9 +90,6 @@ export default function InteractiveSessionModal() {
     resetForm();
   }, [workflow, resetForm]);
 
-  // no workflow passed, nothing to show
-  if (!workflow) return null;
-
   if (allSessionTypes.length > 0 && !sessionType) {
     // initialize state
     resetForm();
@@ -100,12 +98,12 @@ export default function InteractiveSessionModal() {
 
   const onCloseModal = () => {
     resetForm();
-    dispatch(closeInteractiveSessionModal());
+    onClose();
   };
 
   if (allSessionTypes.length === 0) {
     return (
-      <Modal open={open} onClose={onCloseModal} closeIcon size="small">
+      <Modal open={isOpen} onClose={onCloseModal} closeIcon size="small">
         <Modal.Header>Open interactive session</Modal.Header>
         <Modal.Content>
           There aren't any available interactive session types.
@@ -163,7 +161,7 @@ export default function InteractiveSessionModal() {
   };
 
   return (
-    <Modal open={open} onClose={onCloseModal} closeIcon size="small">
+    <Modal open={isOpen} onClose={onCloseModal} closeIcon size="small">
       <Modal.Header>Open interactive session</Modal.Header>
       <Modal.Content>
         <Form id="formOpenSession" onSubmit={onSubmit} loading={isLoading}>

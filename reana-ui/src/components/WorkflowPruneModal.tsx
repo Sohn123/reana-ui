@@ -9,39 +9,38 @@
 */
 
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { Button, Checkbox, Icon, Message, Modal } from "semantic-ui-react";
 
-import { closePruneWorkflowModal, pruneWorkspace } from "~/actions";
-import {
-  getWorkflowPruneModalItem,
-  getWorkflowPruneModalOpen,
-} from "~/selectors";
+import { pruneWorkspace } from "~/actions";
+import { ParsedWorkflow } from "~/util";
 
-export default function WorkflowPruneModal() {
+interface Props {
+  workflow: ParsedWorkflow;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function WorkflowPruneModal({
+  workflow,
+  isOpen,
+  onClose,
+}: Props) {
   const dispatch = useDispatch<any>();
-  const open = useSelector(getWorkflowPruneModalOpen);
-  const workflow = useSelector(getWorkflowPruneModalItem);
-
   const [includeInputs, setIncludeInputs] = useState<boolean>(false);
   const [includeOutputs, setIncludeOutputs] = useState<boolean>(false);
 
-  const { id, name, run, size } = (workflow ?? {}) as any;
+  const { id, name, run } = workflow;
+  const size = workflow.size as { human_readable?: string } | undefined;
 
   useEffect(() => {
-    // reset local state on workflow change
+    // reset local state whenever the modal opens for a new workflow
     setIncludeInputs(false);
     setIncludeOutputs(false);
-  }, [id]);
-
-  if (!workflow) return null;
-
-  const onCloseModal = (): void => {
-    dispatch(closePruneWorkflowModal());
-  };
+  }, [id, isOpen]);
 
   return (
-    <Modal open={open} onClose={onCloseModal} closeIcon size="small">
+    <Modal open={isOpen} onClose={onClose} closeIcon size="small">
       <Modal.Header>Prune workspace</Modal.Header>
       <Modal.Content>
         <Message icon warning>
@@ -80,15 +79,15 @@ export default function WorkflowPruneModal() {
               await dispatch(
                 pruneWorkspace(id, { includeInputs, includeOutputs }),
               );
-              onCloseModal(); // close only on success
-            } catch (e) {
-              // keep modal open on error, notification is handled already
+              onClose();
+            } catch {
+              // keep modal open on error; notification is handled upstream
             }
           }}
         >
           Prune "{name}#{run}"
         </Button>
-        <Button onClick={onCloseModal}>Cancel</Button>
+        <Button onClick={onClose}>Cancel</Button>
       </Modal.Actions>
     </Modal>
   );

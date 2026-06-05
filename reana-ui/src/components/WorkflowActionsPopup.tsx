@@ -9,24 +9,21 @@
 */
 
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { Icon, Menu, Popup } from "semantic-ui-react";
 
-import {
-  closeInteractiveSession,
-  deleteWorkflow,
-  openDeleteWorkflowModal,
-  openPruneWorkflowModal,
-  openInteractiveSessionModal,
-  openShareWorkflowModal,
-  openStopWorkflowModal,
-} from "~/actions";
-import { getUserEmail } from "~/selectors";
+import { closeInteractiveSession, deleteWorkflow } from "~/actions";
+import { useGetYou } from "~/api/hooks";
+import { ParsedWorkflow } from "~/util";
 
 import { JupyterNotebookIcon } from "~/components";
+import WorkflowDeleteModal from "./WorkflowDeleteModal";
+import WorkflowPruneModal from "./WorkflowPruneModal";
+import WorkflowShareModal from "./WorkflowShareModal";
+import WorkflowStopModal from "./WorkflowStopModal";
+import InteractiveSessionModal from "./InteractiveSessionModal";
 
 import styles from "./WorkflowActionsPopup.module.scss";
-import { ParsedWorkflow } from "~/util";
 
 interface Props {
   workflow: ParsedWorkflow;
@@ -39,9 +36,19 @@ export default function WorkflowActionsPopup({
   workflow,
   className = "",
 }: Props) {
-  const dispatch: any = useDispatch();
-  const [open, setOpen] = useState(false);
-  const userEmail: any = useSelector(getUserEmail);
+  const dispatch = useDispatch<any>();
+  const userEmail = useGetYou().data?.email ?? "";
+
+  // Popup open/closed
+  const [popupOpen, setPopupOpen] = useState(false);
+
+  // Controlled modal states — co-located with their trigger
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [stopOpen, setStopOpen] = useState(false);
+  const [pruneOpen, setPruneOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [sessionOpen, setSessionOpen] = useState(false);
+
   const { id, status } = workflow;
   const size = workflow.size as { raw: number } | undefined;
   const sessionStatus = workflow.session_status as string | undefined;
@@ -51,16 +58,18 @@ export default function WorkflowActionsPopup({
   const isRunning = status === "running";
   const isSessionOpen = sessionStatus === "running";
 
-  let menuItems: any[] = [];
+  const closePopup = () => setPopupOpen(false);
+
+  const menuItems: any[] = [];
 
   if (!isDeleted && !isSessionOpen) {
     menuItems.push({
       key: "openNotebook",
       content: "Open Jupyter Notebook",
       icon: JupyterIcon,
-      onClick: (e: React.MouseEvent) => {
-        dispatch(openInteractiveSessionModal(workflow));
-        setOpen(false);
+      onClick: () => {
+        setSessionOpen(true);
+        closePopup();
       },
     });
   }
@@ -69,9 +78,9 @@ export default function WorkflowActionsPopup({
     key: "share",
     content: "Share workflow",
     icon: "share alternate",
-    onClick: (e: React.MouseEvent) => {
-      dispatch(openShareWorkflowModal(workflow));
-      setOpen(false);
+    onClick: () => {
+      setShareOpen(true);
+      closePopup();
     },
   });
 
@@ -80,9 +89,9 @@ export default function WorkflowActionsPopup({
       key: "closeNotebook",
       content: "Close Jupyter Notebook",
       icon: JupyterIcon,
-      onClick: (e: React.MouseEvent) => {
+      onClick: () => {
         dispatch(closeInteractiveSession(id));
-        setOpen(false);
+        closePopup();
       },
     });
   }
@@ -92,9 +101,9 @@ export default function WorkflowActionsPopup({
       key: "stop",
       content: "Stop workflow",
       icon: "stop",
-      onClick: (e: React.MouseEvent) => {
-        dispatch(openStopWorkflowModal(workflow));
-        setOpen(false);
+      onClick: () => {
+        setStopOpen(true);
+        closePopup();
       },
     });
   }
@@ -104,9 +113,9 @@ export default function WorkflowActionsPopup({
       key: "prune",
       content: "Prune workspace",
       icon: "filter",
-      onClick: (e: React.MouseEvent) => {
-        dispatch(openPruneWorkflowModal(workflow));
-        setOpen(false);
+      onClick: () => {
+        setPruneOpen(true);
+        closePopup();
       },
     });
   }
@@ -116,9 +125,9 @@ export default function WorkflowActionsPopup({
       key: "delete",
       content: "Delete workflow",
       icon: "trash",
-      onClick: (e: React.MouseEvent) => {
-        dispatch(openDeleteWorkflowModal(workflow));
-        setOpen(false);
+      onClick: () => {
+        setDeleteOpen(true);
+        closePopup();
       },
     });
   }
@@ -128,36 +137,64 @@ export default function WorkflowActionsPopup({
       key: "freeup",
       content: "Free up disk",
       icon: "hdd",
-      onClick: (e: React.MouseEvent) => {
+      onClick: () => {
         dispatch(deleteWorkflow(id));
-        setOpen(false);
+        closePopup();
       },
     });
   }
 
+  if (workflow.ownerEmail !== userEmail || menuItems.length === 0) {
+    return null;
+  }
+
   return (
     <div className={className}>
-      {workflow.ownerEmail === userEmail && menuItems.length > 0 && (
-        <Popup
-          basic
-          trigger={
-            <Icon
-              link
-              name="ellipsis vertical"
-              className={styles.icon}
-              onClick={(e) => {
-                setOpen(true);
-              }}
-            />
-          }
-          position="bottom left"
-          on="click"
-          open={open}
-          onClose={() => setOpen(false)}
-        >
-          <Menu items={menuItems} secondary vertical />
-        </Popup>
-      )}
+      <Popup
+        basic
+        trigger={
+          <Icon
+            link
+            name="ellipsis vertical"
+            className={styles.icon}
+            onClick={() => setPopupOpen(true)}
+          />
+        }
+        position="bottom left"
+        on="click"
+        open={popupOpen}
+        onClose={closePopup}
+      >
+        <Menu items={menuItems} secondary vertical />
+      </Popup>
+
+      {/* Modals are co-located here; Semantic UI renders them via a portal
+          at document.body, so DOM nesting does not affect z-index or overlay */}
+      <WorkflowDeleteModal
+        workflow={workflow}
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+      />
+      <WorkflowStopModal
+        workflow={workflow}
+        isOpen={stopOpen}
+        onClose={() => setStopOpen(false)}
+      />
+      <WorkflowPruneModal
+        workflow={workflow}
+        isOpen={pruneOpen}
+        onClose={() => setPruneOpen(false)}
+      />
+      <WorkflowShareModal
+        workflow={workflow}
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+      />
+      <InteractiveSessionModal
+        workflow={workflow}
+        isOpen={sessionOpen}
+        onClose={() => setSessionOpen(false)}
+      />
     </div>
   );
 }

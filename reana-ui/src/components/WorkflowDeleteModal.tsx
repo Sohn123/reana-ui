@@ -9,10 +9,10 @@
 */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { Button, Checkbox, Icon, Message, Modal } from "semantic-ui-react";
 
-import { closeDeleteWorkflowModal, deleteWorkflow } from "~/actions";
+import { deleteWorkflow } from "~/actions";
 import client from "~/client";
 import styles from "./WorkflowDeleteModal.module.css";
 import {
@@ -20,10 +20,7 @@ import {
   NON_FINISHED_STATUSES,
   WORKFLOW_RUNS_PREFETCH_PAGE_SIZE,
 } from "~/config";
-import {
-  getWorkflowDeleteModalItem,
-  getWorkflowDeleteModalOpen,
-} from "~/selectors";
+import { ParsedWorkflow } from "~/util";
 
 // Max number of runs to show inline in checkbox labels before truncating
 const MAX_RUN_LABELS_SHOWN = 6;
@@ -195,22 +192,30 @@ const deleteRunWithRetry = async (
   throw lastError;
 };
 
-export default function WorkflowDeleteModal() {
+interface Props {
+  workflow: ParsedWorkflow;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function WorkflowDeleteModal({
+  workflow,
+  isOpen,
+  onClose,
+}: Props) {
   const dispatch = useDispatch<any>();
-  const open = useSelector(getWorkflowDeleteModalOpen);
-  const workflow = useSelector(getWorkflowDeleteModalItem);
 
   const [allRuns, setAllRuns] = useState(false);
   const [confirmRelatedDeletion, setConfirmRelatedDeletion] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { id, name, run, size } = (workflow ?? {}) as any;
+  const { id, name, run, size } = workflow as any;
   const {
     total: allRunsTotal,
     items: allRunItems,
     relatedIds: relatedRunIds,
-  } = useWorkflowRuns({ open, name, run });
+  } = useWorkflowRuns({ open: isOpen, name, run });
 
   useEffect(() => {
     // reset local state on workflow change
@@ -226,8 +231,8 @@ export default function WorkflowDeleteModal() {
     typeof allRunsTotal === "number" && allRunsTotal > allRunItems.length;
 
   const onCloseModal = useCallback(() => {
-    dispatch(closeDeleteWorkflowModal());
-  }, [dispatch]);
+    onClose();
+  }, [onClose]);
 
   const selectedFullName = run ? `${name}.${run}` : name;
   const selectedGroup = getWorkspaceGroup(selectedFullName);
@@ -379,7 +384,7 @@ export default function WorkflowDeleteModal() {
   if (!workflow) return null;
 
   return (
-    <Modal open={open} onClose={onCloseModal} closeIcon size="small">
+    <Modal open={isOpen} onClose={onCloseModal} closeIcon size="small">
       <Modal.Header>Delete workflow</Modal.Header>
       <Modal.Content>
         {deleteError && (

@@ -26,15 +26,10 @@ import { getWorkflowRefresh } from "~/selectors";
 import { parseWorkflows, ParsedWorkflow } from "~/util";
 import BasePage from "../BasePage";
 import {
-  InteractiveSessionModal,
   Notification,
   WorkflowInfo,
   WorkflowActionsPopup,
   WorkflowBadges,
-  WorkflowDeleteModal,
-  WorkflowPruneModal,
-  WorkflowShareModal,
-  WorkflowStopModal,
 } from "~/components";
 import {
   WorkflowLogs,
@@ -274,11 +269,6 @@ export default function WorkflowDetails() {
             navigate(`${path}${keepQuery}`, { replace: false });
           }}
         />
-        <InteractiveSessionModal />
-        <WorkflowDeleteModal />
-        <WorkflowPruneModal />
-        <WorkflowStopModal />
-        <WorkflowShareModal />
       </Container>
     </BasePage>
   );

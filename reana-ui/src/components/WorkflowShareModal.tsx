@@ -9,7 +9,8 @@
 */
 
 import React, { useCallback, useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import SemanticDatepicker from "react-semantic-ui-datepickers";
 import {
   Button,
@@ -24,14 +25,12 @@ import {
   Popup,
 } from "semantic-ui-react";
 
-import { closeShareWorkflowModal, fetchWorkflowShareStatus } from "~/actions";
 import client from "~/client";
 import {
-  getLoadingWorkflowShareStatus,
-  getWorkflowShareModalItem,
-  getWorkflowShareModalOpen,
-  getWorkflowShareStatus,
-} from "~/selectors";
+  useGetWorkflowShareStatus,
+  getGetWorkflowShareStatusQueryKey,
+} from "~/api/hooks";
+import { ParsedWorkflow } from "~/util";
 
 import styles from "./WorkflowShareModal.module.scss";
 
@@ -46,29 +45,27 @@ function WorkflowShareStatus({
   handleUnshareWorkflowSuccess,
   handleUnshareWorkflowError,
 }: WorkflowShareStatusProps) {
-  const dispatch = useDispatch<any>();
-  const loadingWorkflowShareStatus = useSelector(getLoadingWorkflowShareStatus);
-  const workflowShareStatus = useSelector(getWorkflowShareStatus(workflow?.id));
+  const queryClient = useQueryClient();
+  const { data: shareStatusData, isLoading: loadingWorkflowShareStatus } =
+    useGetWorkflowShareStatus(workflow?.id);
+  // Map API snake_case to the camelCase shape the JSX already expects
+  const workflowShareStatus = (shareStatusData?.shared_with ?? []).map(
+    (item) => ({ userEmail: item.user_email, validUntil: item.valid_until }),
+  );
 
   const [loadingUnshareWorkflow, setLoadingUnshareWorkflow] = useState(false);
   const [confirmUnshareOpen, setConfirmUnshareOpen] = useState(false);
   const [userToUnshareWith, setUserToUnshareWith] = useState(null);
   const { name, run, id } = workflow;
 
-  useEffect(() => {
-    if (workflow) {
-      dispatch(fetchWorkflowShareStatus(workflow.id));
-    }
-  }, [dispatch, workflow]);
-
   const handleUnshareWorkflow = (userEmailToUnshareWith) => {
     setLoadingUnshareWorkflow(true);
     client
-      .unshareWorkflow(id, {
-        userEmailToUnshareWith,
-      })
+      .unshareWorkflow(id, { userEmailToUnshareWith })
       .then(() => {
-        dispatch(fetchWorkflowShareStatus(id));
+        queryClient.invalidateQueries({
+          queryKey: getGetWorkflowShareStatusQueryKey(id),
+        });
         handleUnshareWorkflowSuccess(userEmailToUnshareWith);
         setLoadingUnshareWorkflow(false);
         setConfirmUnshareOpen(false);
@@ -177,10 +174,19 @@ interface SharingResult {
   unshareError?: string;
 }
 
-export default function WorkflowShareModal() {
+interface Props {
+  workflow: ParsedWorkflow;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function WorkflowShareModal({
+  workflow,
+  isOpen,
+  onClose,
+}: Props) {
   const dispatch = useDispatch<any>();
-  const open = useSelector(getWorkflowShareModalOpen);
-  const workflow = useSelector(getWorkflowShareModalItem);
+  const queryClient = useQueryClient();
   const [linkCopied, setLinkCopied] = useState(false);
   const [dropDownOptions, setDropDownOptions] = useState<
     Array<{ text: string; value: string }>
@@ -212,12 +218,10 @@ export default function WorkflowShareModal() {
 
   useEffect(() => {
     resetState();
-  }, [workflow, open, resetState]);
-
-  if (!workflow) return null;
+  }, [workflow, isOpen, resetState]);
 
   const onCloseModal = () => {
-    dispatch(closeShareWorkflowModal());
+    onClose();
     resetState();
   };
 
@@ -308,8 +312,10 @@ export default function WorkflowShareModal() {
     }
 
     Promise.allSettled(requests).then(() => {
-      // update share status
-      dispatch(fetchWorkflowShareStatus(id));
+      // refresh share status via React Query
+      queryClient.invalidateQueries({
+        queryKey: getGetWorkflowShareStatusQueryKey(id),
+      });
       // reset form and share button
       resetShareForm();
       setLoadingShareWorkflow(false);
@@ -323,7 +329,7 @@ export default function WorkflowShareModal() {
 
   const { name, run } = workflow;
   return (
-    <Modal open={open} onClose={onCloseModal} closeIcon size="tiny">
+    <Modal open={isOpen} onClose={onCloseModal} closeIcon size="tiny">
       <Modal.Header>
         Share {name} #{run}
       </Modal.Header>

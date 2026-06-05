@@ -15,12 +15,7 @@ import {
   Box,
   WorkflowBadges,
   WorkflowInfo,
-  WorkflowDeleteModal,
-  WorkflowPruneModal,
-  WorkflowShareModal,
-  WorkflowStopModal,
   WorkflowActionsPopup,
-  InteractiveSessionModal,
 } from "~/components";
 import { useGetYou } from "~/api/hooks";
 import { ParsedWorkflow } from "~/util";
@@ -84,11 +79,6 @@ export default function WorkflowList({
       {workflows.map((workflow) => (
         <WorkflowListItem key={workflow.id} workflow={workflow} />
       ))}
-      <InteractiveSessionModal />
-      <WorkflowDeleteModal />
-      <WorkflowPruneModal />
-      <WorkflowStopModal />
-      <WorkflowShareModal />
     </>
   );
 }

@@ -8,30 +8,28 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { Button, Modal, Message, Icon } from "semantic-ui-react";
 
-import { stopWorkflow, closeStopWorkflowModal } from "~/actions";
-import {
-  getWorkflowStopModalOpen,
-  getWorkflowStopModalItem,
-} from "~/selectors";
+import { stopWorkflow } from "~/actions";
+import { ParsedWorkflow } from "~/util";
 
-export default function WorkflowStopModal() {
+interface Props {
+  workflow: ParsedWorkflow;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function WorkflowStopModal({
+  workflow,
+  isOpen,
+  onClose,
+}: Props) {
   const dispatch = useDispatch<any>();
-  const open = useSelector(getWorkflowStopModalOpen);
-  const workflow = useSelector(getWorkflowStopModalItem);
+  const { id, name, run } = workflow;
 
-  if (!workflow) return null;
-
-  const onCloseModal = (): void => {
-    dispatch(closeStopWorkflowModal());
-  };
-
-  const { id, name, run }: { id: string; name: string; run: string | number } =
-    workflow;
   return (
-    <Modal open={open} onClose={onCloseModal} closeIcon size="small">
+    <Modal open={isOpen} onClose={onClose} closeIcon size="small">
       <Modal.Header>Stop workflow</Modal.Header>
       <Modal.Content>
         <Message icon warning>
@@ -50,12 +48,12 @@ export default function WorkflowStopModal() {
         <Button
           negative
           onClick={() => {
-            dispatch(stopWorkflow(id)).then(onCloseModal);
+            dispatch(stopWorkflow(id)).then(onClose);
           }}
         >
           Stop
         </Button>
-        <Button onClick={onCloseModal}>Cancel</Button>
+        <Button onClick={onClose}>Cancel</Button>
       </Modal.Actions>
     </Modal>
   );
