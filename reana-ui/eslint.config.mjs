@@ -49,7 +49,6 @@ export default [
     files: ["**/*.ts", "**/*.tsx"],
     plugins: {
       prettier: fixupPluginRules(prettier),
-      "@typescript-eslint": tsPlugin,
     },
     languageOptions: {
       parser: tsParser,
