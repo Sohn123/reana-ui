@@ -11,6 +11,7 @@
 export { default as Announcement } from "./Announcement";
 export { default as CodeSnippet } from "./CodeSnippet";
 export { default as CopyButton } from "./CopyButton";
+export { default as LogViewer } from "./LogViewer";
 export { default as Footer } from "./Footer";
 export { default as Notification } from "./Notification";
 export { default as Pagination } from "./Pagination";

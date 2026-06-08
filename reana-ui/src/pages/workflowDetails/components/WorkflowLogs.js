@@ -18,16 +18,14 @@ import { fetchWorkflowLogs } from "~/actions";
 import { NON_FINISHED_STATUSES } from "~/config";
 import { statusMapping } from "~/util";
 import { getWorkflowLogs, loadingDetails } from "~/selectors";
-import { CodeSnippet, TooltipIfTruncated } from "~/components";
+import { LogViewer, TooltipIfTruncated } from "~/components";
 
 import styles from "./WorkflowLogs.module.scss";
 
 function EngineLogs({ logs, workflowStatus }) {
   const isExecuting = NON_FINISHED_STATUSES.includes(workflowStatus);
   return logs ? (
-    <CodeSnippet dollarPrefix={false} classes={styles.logs}>
-      {logs}
-    </CodeSnippet>
+    <LogViewer logs={logs} className={styles.logs} />
   ) : (
     <Message
       icon="info circle"
@@ -86,6 +84,7 @@ function ServiceLogs({ isDask, components, workflowStatus }) {
   }, [
     isDask,
     isExecuting,
+    hasComponents,
     components,
     componentFromPath,
     serviceLogsPath,
@@ -164,9 +163,11 @@ function ServiceLogs({ isDask, components, workflowStatus }) {
         </div>
       </section>
       {components?.[selectedComponentIndex]?.content ? (
-        <CodeSnippet dollarPrefix={false} classes={styles.logs}>
-          {components[selectedComponentIndex].content}
-        </CodeSnippet>
+        <LogViewer
+          key={selectedComponentIndex}
+          logs={components[selectedComponentIndex].content}
+          className={styles.logs}
+        />
       ) : (
         <Message
           icon="info circle"
@@ -208,7 +209,7 @@ function JobLogs({ logs }) {
     if (!nextId) return;
     const exists = allJobs.some((l) => l.backend_job_id === nextId);
     if (exists && nextId !== selectedJobId) {
-      selectedJobId(nextId);
+      setSelectedJobId(nextId);
     }
   }, [jobFromPath, selectedJobId, allJobs]);
 
@@ -311,9 +312,11 @@ function JobLogs({ logs }) {
         )}
       </section>
       {log && (
-        <CodeSnippet dollarPrefix={false} classes={styles.logs}>
-          {log.logs}
-        </CodeSnippet>
+        <LogViewer
+          key={log.backend_job_id}
+          logs={log.logs}
+          className={styles.logs}
+        />
       )}
     </>
   );

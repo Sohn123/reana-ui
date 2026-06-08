@@ -21,12 +21,21 @@ export default function CopyButton({
   label,
   icon = "copy outline",
   timeout = COPY_CHECK_TIMEOUT,
+  dismissOnScroll = false,
   ...props
 }) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef();
 
   useEffect(() => () => clearTimeout(timeoutRef.current), []);
+
+  useEffect(() => {
+    if (!copied || !dismissOnScroll) return;
+    const reset = () => setCopied(false);
+    document.addEventListener("scroll", reset, { capture: true });
+    return () =>
+      document.removeEventListener("scroll", reset, { capture: true });
+  }, [copied, dismissOnScroll]);
 
   const handleClick = async () => {
     const ok = await copy(text, { format: "text/plain" });
@@ -61,4 +70,5 @@ CopyButton.propTypes = {
   label: PropTypes.string,
   icon: PropTypes.string,
   timeout: PropTypes.number,
+  dismissOnScroll: PropTypes.bool,
 };

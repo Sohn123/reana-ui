@@ -1,0 +1,117 @@
+/*
+  -*- coding: utf-8 -*-
+
+  This file is part of REANA.
+  Copyright (C) 2026 CERN.
+
+  REANA is free software; you can redistribute it and/or modify it
+  under the terms of the MIT License; see LICENSE file for more details.
+*/
+
+@import "@palette";
+
+.bar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background-color: $white;
+  border: 1px solid darken($sepia, 12%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.input {
+  width: 200px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid darken($sepia, 18%);
+  border-radius: 4px;
+  color: $dark-blue;
+  font-size: 0.9em;
+  outline: none;
+
+  &:focus {
+    border-color: $sui-blue;
+  }
+
+  &::placeholder {
+    color: $gray;
+  }
+
+  &.error {
+    border-color: $sui-red;
+  }
+}
+
+.counter {
+  min-width: 70px;
+  padding: 0 2px;
+  color: $gray;
+  font-size: 0.85em;
+  text-align: right;
+  white-space: nowrap;
+
+  &.no-results {
+    color: $sui-red;
+  }
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: $dark-blue;
+  font-size: 0.85em;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background-color: darken($sepia, 5%);
+  }
+
+  &.active {
+    background-color: rgba($sui-blue, 0.15);
+    border-color: $sui-blue;
+    color: $sui-blue;
+  }
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: $dark-blue;
+  cursor: pointer;
+
+  &:hover {
+    background-color: darken($sepia, 5%);
+  }
+
+  &:disabled {
+    color: $light-gray;
+    background: transparent;
+    cursor: default;
+  }
+
+  :global(.icon) {
+    margin: 0;
+  }
+}
