@@ -24,7 +24,12 @@ import {
   Popup,
 } from "semantic-ui-react";
 
-import { closeShareWorkflowModal, fetchWorkflowShareStatus } from "~/actions";
+import {
+  closeShareWorkflowModal,
+  fetchUsersYouSharedWith,
+  fetchWorkflowShareStatus,
+  WORKFLOW_LIST_REFRESH,
+} from "~/actions";
 import client from "~/client";
 import {
   getLoadingWorkflowShareStatus,
@@ -63,6 +68,8 @@ function WorkflowShareStatus({
       })
       .then(() => {
         dispatch(fetchWorkflowShareStatus(id));
+        dispatch(fetchUsersYouSharedWith());
+        dispatch({ type: WORKFLOW_LIST_REFRESH });
         handleUnshareWorkflowSuccess(userEmailToUnshareWith);
         setLoadingUnshareWorkflow(false);
         setConfirmUnshareOpen(false);
@@ -283,8 +290,10 @@ export default function WorkflowShareModal() {
     }
 
     Promise.allSettled(requests).then(() => {
-      // update share status
+      // update share status, refresh sharing user lists and update workflow list
       dispatch(fetchWorkflowShareStatus(id));
+      dispatch(fetchUsersYouSharedWith());
+      dispatch({ type: WORKFLOW_LIST_REFRESH });
       // reset form and share button
       resetShareForm();
       setLoadingShareWorkflow(false);

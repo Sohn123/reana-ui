@@ -2,7 +2,7 @@
   -*- coding: utf-8 -*-
 
   This file is part of REANA.
-  Copyright (C) 2020, 2022, 2023 CERN.
+  Copyright (C) 2020, 2022, 2023, 2026 CERN.
 
   REANA is free software; you can redistribute it and/or modify it
   under the terms of the MIT License; see LICENSE file for more details.
@@ -13,27 +13,23 @@ import { Grid } from "semantic-ui-react";
 
 import WorkflowStatusFilter from "./WorkflowStatusFilter";
 import WorkflowSorting from "./WorkflowSorting";
-
 import styles from "./WorkflowFilters.module.scss";
 import WorkflowSharingFilters from "./WorkflowSharingFilter";
 import WorkflowSessionFilters from "./WorkflowSessionFilters";
 
 export default function WorkflowFilters({
+  ownedBy,
+  sharedWith,
+  setSharing,
   statusFilter,
   setStatusFilter,
-  showDeleted,
-  setShowDeleted,
-  statusExplicit,
+  includeDeleted,
+  setIncludeDeleted,
+  hasStatusFilter,
   sortDir,
   setSortDir,
-  ownedByFilter,
-  setOwnedByFilter,
-  sharedWithFilter,
-  sharedWithMode,
-  setSharedWithFilter,
-  setSharedWithModeInUrl,
-  interactiveOnlyFilter,
-  setInteractiveOnlyFilter,
+  showOpenSessionsOnly,
+  setShowOpenSessionsOnly,
 }) {
   return (
     <div className={styles.container}>
@@ -41,21 +37,18 @@ export default function WorkflowFilters({
         <WorkflowStatusFilter
           statusFilter={statusFilter}
           filter={setStatusFilter}
-          showDeleted={showDeleted}
-          setShowDeleted={setShowDeleted}
-          statusExplicit={statusExplicit}
+          includeDeleted={includeDeleted}
+          setIncludeDeleted={setIncludeDeleted}
+          hasStatusFilter={hasStatusFilter}
         />
         <WorkflowSessionFilters
-          enabled={interactiveOnlyFilter}
-          filter={setInteractiveOnlyFilter}
+          enabled={showOpenSessionsOnly}
+          filter={setShowOpenSessionsOnly}
         />
         <WorkflowSharingFilters
-          ownedByFilter={ownedByFilter}
-          setOwnedByFilter={setOwnedByFilter}
-          sharedWithFilter={sharedWithFilter}
-          sharedWithMode={sharedWithMode}
-          setSharedWithFilter={setSharedWithFilter}
-          setSharedWithModeInUrl={setSharedWithModeInUrl}
+          ownedBy={ownedBy}
+          sharedWith={sharedWith}
+          setSharing={setSharing}
         />
         <Grid.Column mobile={16} tablet={4} computer={3} floated="right">
           <WorkflowSorting value={sortDir} sort={setSortDir} />
@@ -66,18 +59,16 @@ export default function WorkflowFilters({
 }
 
 WorkflowFilters.propTypes = {
+  ownedBy: PropTypes.string,
+  sharedWith: PropTypes.string,
+  setSharing: PropTypes.func.isRequired,
   statusFilter: PropTypes.string,
   setStatusFilter: PropTypes.func.isRequired,
-  showDeleted: PropTypes.bool.isRequired,
-  setShowDeleted: PropTypes.func.isRequired,
-  statusExplicit: PropTypes.bool.isRequired,
+  includeDeleted: PropTypes.bool.isRequired,
+  setIncludeDeleted: PropTypes.func.isRequired,
+  hasStatusFilter: PropTypes.bool.isRequired,
   sortDir: PropTypes.string.isRequired,
   setSortDir: PropTypes.func.isRequired,
-  ownedByFilter: PropTypes.string,
-  setOwnedByFilter: PropTypes.func.isRequired,
-  sharedWithFilter: PropTypes.string,
-  sharedWithMode: PropTypes.bool,
-  setSharedWithFilter: PropTypes.func.isRequired,
-  interactiveOnlyFilter: PropTypes.bool.isRequired,
-  setInteractiveOnlyFilter: PropTypes.func.isRequired,
+  showOpenSessionsOnly: PropTypes.bool.isRequired,
+  setShowOpenSessionsOnly: PropTypes.func.isRequired,
 };

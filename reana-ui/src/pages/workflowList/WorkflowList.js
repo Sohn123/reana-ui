@@ -9,11 +9,9 @@
 */
 
 import moment from "moment";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Container, Dimmer, Dropdown, Icon, Loader } from "semantic-ui-react";
-import isEqual from "lodash/isEqual";
 
 import { fetchUsersSharedWithYou, fetchWorkflows } from "~/actions";
 import {
@@ -27,20 +25,14 @@ import {
   getWorkflowRefresh,
   getUsersSharedWithYou,
 } from "~/selectors";
-import { NON_DELETED_STATUSES } from "~/config";
 import { Title, Pagination, Search } from "~/components";
 import BasePage from "../BasePage";
 import Welcome from "./components/Welcome";
 import WorkflowFilters from "./components/WorkflowFilters";
 import WorkflowList from "./components/WorkflowList";
+import { useWorkflowListQuery } from "./useWorkflowListQuery";
+import { WORKFLOW_LIST_PAGE_SIZE_OPTIONS } from "./workflowListQuery";
 import styles from "./WorkflowList.module.scss";
-
-const pageSizeOptions = [5, 10, 20, 50, 100].map((size) => ({
-  key: size,
-  text: String(size),
-  value: size,
-}));
-const DEFAULT_PAGE_SIZE = pageSizeOptions[1].value;
 
 export default function WorkflowListPage() {
   return (
@@ -53,7 +45,6 @@ export default function WorkflowListPage() {
 function Workflows() {
   const currentUTCTime = () => moment.utc().format("HH:mm:ss [UTC]");
   const [refreshedAt, setRefreshedAt] = useState(currentUTCTime());
-  const [searchParams, setSearchParams] = useSearchParams();
   const dispatch = useDispatch();
   const config = useSelector(getConfig);
   const workflows = useSelector(getWorkflows);
@@ -66,307 +57,44 @@ function Workflows() {
   const configLoaded = useSelector(isConfigLoaded);
   const hideWelcomePage = !workflows || !configLoaded;
   const { pollingSecs } = config;
-  const isValidPage = (n) => Number.isFinite(n) && n > 0;
-  const page = useMemo(() => {
-    const n = parseInt(searchParams.get("page") || "");
-    return isValidPage(n) ? n : 1;
-  }, [searchParams]);
-  const [pageSize, setPageSize] = useState(() => {
-    const n = parseInt(searchParams.get("page-size") || "");
-    return isValidPage(n) ? n : DEFAULT_PAGE_SIZE;
-  });
-  const pagination = useMemo(
-    () => ({ page, size: pageSize }),
-    [page, pageSize],
-  );
-  const initialSearch = searchParams.get("search") || "";
-  const [searchText, setSearchText] = useState(initialSearch);
-  const [committedSearch, setCommittedSearch] = useState(initialSearch);
-
-  // Owned by derived from URL
-  const ownedByFilter = useMemo(() => {
-    const sharedBy = searchParams.get("shared-by");
-    if (sharedBy) {
-      // Explicit owner selected
-      return sharedBy;
-    }
-    // Fallback to "you" vs "anybody" based on shared
-    return searchParams.get("shared") === "true" ? "anybody" : "you";
-  }, [searchParams]);
-
-  // Shared with flag from URL
-  const sharedWithMode = useMemo(
-    () => searchParams.get("shared-with") === "true",
-    [searchParams],
-  );
+  const {
+    query,
+    requestParams,
+    searchText,
+    setSearchText,
+    submitSearch,
+    setPage,
+    setPageSize,
+    setStatus,
+    setIncludeDeleted,
+    setSort,
+    setShowOpenSessionsOnly,
+    setSharing,
+  } = useWorkflowListQuery();
+  const {
+    page,
+    pageSize,
+    status,
+    hasStatusFilter,
+    includeDeleted,
+    sort,
+    showOpenSessionsOnly,
+    ownedBy,
+    sharedWith,
+  } = query;
 
   // Load information about users who have shared workflows with you
   useEffect(() => {
     dispatch(fetchUsersSharedWithYou());
   }, [dispatch]);
 
-  const [sharedWithFilter, setSharedWithFilter] = useState(() =>
-    searchParams.get("shared-with") === "true" ? "anybody" : undefined,
-  );
-  const showDeletedMode = useMemo(
-    () => searchParams.get("show-deleted") === "true",
-    [searchParams],
-  );
-
-  // Single value Status single value from URL - undefined means all
-  const statusFilter = useMemo(
-    () => searchParams.get("status") ?? undefined,
-    [searchParams],
-  );
-  const statusExplicit = useMemo(
-    () => searchParams.has("status"),
-    [searchParams],
-  );
-  const sortDir = useMemo(
-    () => searchParams.get("sort") || "desc",
-    [searchParams],
-  );
-  const interactiveOnlyFilter = useMemo(
-    () => searchParams.get("open-sessions") === "true",
-    [searchParams],
-  );
-
-  const setInteractiveOnlyFilterInUrl = (on) => {
-    setSearchParams(
-      (prev) => {
-        const qp = new URLSearchParams(prev);
-        if (on) {
-          qp.set("open-sessions", "true");
-        } else {
-          qp.delete("open-sessions");
-        }
-        qp.delete("page"); // reset pagination when filter changes
-        return qp;
-      },
-      { replace: false },
-    );
-  };
-
-  // URL writers
-  const setStatusFilterInUrl = (nextStatus) => {
-    setSearchParams(
-      (prev) => {
-        const qp = new URLSearchParams(prev);
-        if (nextStatus) qp.set("status", nextStatus);
-        else qp.delete("status");
-        qp.delete("page");
-        return qp;
-      },
-      { replace: false },
-    );
-  };
-  const setShowDeletedInUrl = (on) => {
-    setSearchParams(
-      (prev) => {
-        const qp = new URLSearchParams(prev);
-        if (on) qp.set("show-deleted", "true");
-        else qp.delete("show-deleted");
-        qp.delete("page");
-        return qp;
-      },
-      { replace: false },
-    );
-  };
-  const setSortDirInUrl = (nextSort) => {
-    setSearchParams(
-      (prev) => {
-        const qp = new URLSearchParams(prev);
-        if (nextSort && nextSort !== "desc") qp.set("sort", nextSort);
-        else qp.delete("sort");
-        qp.delete("page");
-        return qp;
-      },
-      { replace: false },
-    );
-  };
-  const setOwnedByFilter = (next) => {
-    setSearchParams(
-      (prev) => {
-        const qp = new URLSearchParams(prev);
-        qp.delete("shared-with"); // ensure shared-with mode is off
-        if (next === "anybody") {
-          // Show "anybody" workflows
-          qp.set("shared", "true");
-          qp.delete("shared-by");
-        } else if (!next || next === "you") {
-          // Back to "you" (default view)
-          qp.delete("shared");
-          qp.delete("shared-by");
-        } else {
-          // Specific owner selected (e.g. john.doe@example.org)
-          qp.delete("shared");
-          qp.set("shared-by", next);
-        }
-        qp.delete("page");
-        return qp;
-      },
-      { replace: false },
-    );
-  };
-  const setSharedWithModeInUrl = (on) => {
-    setSearchParams(
-      (prev) => {
-        const qp = new URLSearchParams(prev);
-        if (on) {
-          qp.set("shared-with", "true");
-          qp.delete("shared");
-          qp.delete("shared-by");
-        } else {
-          qp.delete("shared-with");
-        }
-        qp.delete("page");
-        return qp;
-      },
-      { replace: false },
-    );
-  };
-
-  const gotoPage = (nextPage) => {
-    setSearchParams(
-      (prev) => {
-        const qp = new URLSearchParams(prev);
-        if (nextPage > 1) qp.set("page", String(nextPage));
-        else qp.delete("page");
-        return qp;
-      },
-      { replace: false },
-    );
-  };
-
-  // Keep URL and search box in sync
-  useEffect(() => {
-    const urlSearch = searchParams.get("search") || "";
-    // If URL changed, update textbox and committedSearch
-    if (urlSearch !== committedSearch && urlSearch !== searchText) {
-      setSearchText(urlSearch);
-      setCommittedSearch(urlSearch);
-      return;
-    }
-    if (committedSearch && urlSearch !== committedSearch) {
-      setSearchParams(
-        (prev) => {
-          const qp = new URLSearchParams(prev);
-          qp.set("search", committedSearch);
-          return qp;
-        },
-        { replace: false },
-      );
-    } else if (!committedSearch && urlSearch) {
-      setSearchParams(
-        (prev) => {
-          const qp = new URLSearchParams(prev);
-          qp.delete("search");
-          return qp;
-        },
-        { replace: false },
-      );
-    }
-  }, [committedSearch, searchParams, searchText, setSearchParams]);
-
-  // if ?page= param is not in a valid format, or page is 1, remove page from URL
-  useEffect(() => {
-    const raw = searchParams.get("page");
-    const n = parseInt(raw || "");
-    const shouldRemovePage =
-      searchParams.has("page") &&
-      (!raw || // page=empty string
-        !Number.isFinite(n) || // page=abc
-        n <= 1); // page=1, page=0
-
-    if (shouldRemovePage) {
-      const next = new URLSearchParams(searchParams);
-      next.delete("page");
-      setSearchParams(next, { replace: true });
-    }
-  }, [searchParams, setSearchParams]);
-
-  // Build API params from URL state
-  const requestParams = useMemo(() => {
-    // owned-by vs shared-with
-    const inSharedWith = sharedWithMode;
-
-    // owned_by=you          -> shared=false
-    // owned_by=anybody      -> shared=true
-    // owned_by=<user@email> -> shared=false, shared_by=<user@email>
-    let shared, sharedBy;
-    if (!inSharedWith) {
-      if (ownedByFilter === "anybody") {
-        shared = true;
-        sharedBy = null;
-      } else if (!ownedByFilter || ownedByFilter === "you") {
-        shared = false;
-      } else {
-        shared = false;
-        sharedBy = ownedByFilter;
-      }
-    }
-
-    const sharedWithParam = inSharedWith
-      ? sharedWithFilter && sharedWithFilter !== "anybody"
-        ? sharedWithFilter
-        : true
-      : undefined;
-
-    // Status appending
-    let statusForApi;
-    if (statusExplicit) {
-      statusForApi = showDeletedMode
-        ? statusFilter === "deleted"
-          ? ["deleted"]
-          : [statusFilter, "deleted"]
-        : [statusFilter];
-    } else {
-      statusForApi = showDeletedMode ? undefined : NON_DELETED_STATUSES;
-    }
-
-    return {
-      pagination: { ...pagination },
-      search: committedSearch || undefined,
-      status: statusForApi,
-      shared,
-      sharedBy,
-      sharedWith: sharedWithParam,
-      sort: sortDir,
-      ...(interactiveOnlyFilter ? { type: "interactive" } : {}),
-    };
-  }, [
-    pagination,
-    committedSearch,
-    statusFilter,
-    statusExplicit,
-    showDeletedMode,
-    ownedByFilter,
-    sharedWithFilter,
-    sharedWithMode,
-    sortDir,
-    interactiveOnlyFilter,
-  ]);
-
   const lastParamsRef = useRef();
-  const rafIdRef = useRef(0);
   useEffect(() => {
     if (!configLoaded) return;
-    if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-    const paramsForFrame = requestParams;
-
-    rafIdRef.current = requestAnimationFrame(() => {
-      if (!isEqual(lastParamsRef.current, paramsForFrame)) {
-        lastParamsRef.current = paramsForFrame;
-        dispatch(fetchWorkflows(paramsForFrame));
-      }
-      rafIdRef.current = 0;
-    });
-
-    return () => {
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-      rafIdRef.current = 0;
-    };
-  }, [dispatch, requestParams, configLoaded, reanaToken]);
+    if (lastParamsRef.current === requestParams) return;
+    lastParamsRef.current = requestParams;
+    dispatch(fetchWorkflows(requestParams));
+  }, [dispatch, requestParams, configLoaded]);
 
   const latestParamsRef = useRef(requestParams);
   useEffect(() => {
@@ -390,23 +118,7 @@ function Workflows() {
     if (workflowRefresh === undefined) return;
     const apiParams = latestParamsRef.current;
     dispatch(fetchWorkflows({ ...apiParams, showLoader: false }));
-  }, [workflowRefresh, dispatch, configLoaded, reanaToken]);
-
-  // Run search using Enter/Click and go to page 1
-  const submitSearch = () => {
-    const q = searchText.trim();
-    setSearchParams(
-      (prev) => {
-        const qp = new URLSearchParams(prev);
-        if (q) qp.set("search", q);
-        else qp.delete("search");
-        qp.delete("page");
-        return qp;
-      },
-      { replace: false },
-    );
-    setCommittedSearch(q);
-  };
+  }, [workflowRefresh, dispatch, configLoaded]);
 
   if (hideWelcomePage) {
     return (
@@ -445,21 +157,18 @@ function Workflows() {
           onSubmit={submitSearch}
         />
         <WorkflowFilters
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilterInUrl}
-          showDeleted={showDeletedMode}
-          setShowDeleted={setShowDeletedInUrl}
-          statusExplicit={statusExplicit}
-          interactiveOnlyFilter={interactiveOnlyFilter}
-          setInteractiveOnlyFilter={setInteractiveOnlyFilterInUrl}
-          ownedByFilter={ownedByFilter}
-          setOwnedByFilter={setOwnedByFilter}
-          sharedWithFilter={sharedWithFilter}
-          sharedWithMode={sharedWithMode}
-          setSharedWithFilter={setSharedWithFilter}
-          sortDir={sortDir}
-          setSortDir={setSortDirInUrl}
-          setSharedWithModeInUrl={setSharedWithModeInUrl}
+          ownedBy={ownedBy}
+          sharedWith={sharedWith}
+          setSharing={setSharing}
+          statusFilter={status}
+          setStatusFilter={setStatus}
+          includeDeleted={includeDeleted}
+          setIncludeDeleted={setIncludeDeleted}
+          hasStatusFilter={hasStatusFilter}
+          showOpenSessionsOnly={showOpenSessionsOnly}
+          setShowOpenSessionsOnly={setShowOpenSessionsOnly}
+          sortDir={sort}
+          setSortDir={setSort}
         />
         <WorkflowList workflows={workflowArray} loading={loading} />
         {!loading && (
@@ -470,7 +179,7 @@ function Workflows() {
               <Dropdown
                 selection
                 compact
-                options={pageSizeOptions}
+                options={WORKFLOW_LIST_PAGE_SIZE_OPTIONS}
                 value={pageSize}
               />
             </div>
@@ -479,7 +188,7 @@ function Workflows() {
                 className={styles.pagination}
                 activePage={page}
                 totalPages={Math.ceil(workflowsCount / pageSize)}
-                onPageChange={(_, { activePage }) => gotoPage(activePage)}
+                onPageChange={(_, { activePage }) => setPage(activePage)}
               />
             )}
             <div className={styles.pageSize}>
@@ -488,10 +197,12 @@ function Workflows() {
                 selection
                 compact
                 options={
-                  pageSizeOptions.some((o) => o.value === pageSize)
-                    ? pageSizeOptions
+                  WORKFLOW_LIST_PAGE_SIZE_OPTIONS.some(
+                    (o) => o.value === pageSize,
+                  )
+                    ? WORKFLOW_LIST_PAGE_SIZE_OPTIONS
                     : [
-                        ...pageSizeOptions,
+                        ...WORKFLOW_LIST_PAGE_SIZE_OPTIONS,
                         {
                           key: pageSize,
                           text: String(pageSize),
@@ -503,16 +214,6 @@ function Workflows() {
                 onChange={(_, { value }) => {
                   const newSize = Number(value);
                   setPageSize(newSize);
-                  setSearchParams((prev) => {
-                    const qp = new URLSearchParams(prev);
-                    if (newSize !== DEFAULT_PAGE_SIZE) {
-                      qp.set("page-size", String(newSize));
-                    } else {
-                      qp.delete("page-size");
-                    }
-                    qp.delete("page"); // reset to page 1
-                    return qp;
-                  });
                 }}
               />
             </div>

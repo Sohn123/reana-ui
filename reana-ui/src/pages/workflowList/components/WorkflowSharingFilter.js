@@ -26,17 +26,14 @@ const sharingFilterOptions = [
 ];
 
 export default function WorkflowSharingFilters({
-  ownedByFilter,
-  setOwnedByFilter,
-  sharedWithFilter,
-  sharedWithMode,
-  setSharedWithFilter,
-  setSharedWithModeInUrl,
+  ownedBy,
+  sharedWith,
+  setSharing,
 }) {
   const dispatch = useDispatch();
-  // Initial mode comes from URL
+  const isSharedWithMode = sharedWith !== undefined;
   const [selectedFilterOption, setSelectedFilterOption] = useState(
-    sharedWithMode ? SHARED_WITH : OWNED_BY,
+    isSharedWithMode ? SHARED_WITH : OWNED_BY,
   );
 
   const usersYouSharedWith = useSelector(getUsersYouSharedWith, _.isEqual);
@@ -68,7 +65,7 @@ export default function WorkflowSharingFilters({
   );
 
   const [selectedUser, setSelectedUser] = useState(() =>
-    sharedWithMode ? "anybody" : usersSharedWithYouOptions[0].value,
+    isSharedWithMode ? (sharedWith ?? "anybody") : (ownedBy ?? "anybody"),
   );
 
   useEffect(() => {
@@ -79,44 +76,35 @@ export default function WorkflowSharingFilters({
   // Keep the dropdown value aligned with URL
   useEffect(() => {
     if (selectedFilterOption === OWNED_BY) {
-      setSelectedUser(ownedByFilter ?? usersSharedWithYouOptions[0].value);
+      setSelectedUser(ownedBy ?? "anybody");
     } else {
-      setSelectedUser(sharedWithFilter ?? "anybody");
+      setSelectedUser(sharedWith ?? "anybody");
     }
-  }, [
-    selectedFilterOption,
-    ownedByFilter,
-    sharedWithFilter,
-    usersSharedWithYouOptions,
-  ]);
+  }, [selectedFilterOption, ownedBy, sharedWith]);
 
   // Reflect URL back if user edited the URL manually
   useEffect(() => {
-    setSelectedFilterOption(sharedWithMode ? SHARED_WITH : OWNED_BY);
-  }, [sharedWithMode]);
+    setSelectedFilterOption(isSharedWithMode ? SHARED_WITH : OWNED_BY);
+  }, [isSharedWithMode]);
 
   const handleSelectedFilterOptionChange = (_, { value }) => {
     setSelectedFilterOption(value);
-
     if (value === OWNED_BY) {
-      setOwnedByFilter("you");
-      setSharedWithFilter(undefined);
-      setSelectedUser("you");
-      setSharedWithModeInUrl(false);
+      setSharing(undefined, undefined);
     } else {
-      setSharedWithFilter("anybody");
-      setSelectedUser("anybody");
-      setSharedWithModeInUrl(true);
+      setSharing(undefined, "anybody");
     }
   };
 
   const handleSelectedUserChange = (_, { value }) => {
     if (selectedFilterOption === OWNED_BY) {
-      setOwnedByFilter(value);
-      setSharedWithFilter(undefined);
+      if (value === "anybody") {
+        setSharing(undefined, undefined);
+      } else {
+        setSharing(value, undefined);
+      }
     } else {
-      setSharedWithFilter(value);
-      setOwnedByFilter(undefined);
+      setSharing(undefined, value);
     }
   };
 
@@ -151,9 +139,7 @@ export default function WorkflowSharingFilters({
 }
 
 WorkflowSharingFilters.propTypes = {
-  ownedByFilter: PropTypes.string,
-  setOwnedByFilter: PropTypes.func.isRequired,
-  sharedWithFilter: PropTypes.string,
-  sharedWithMode: PropTypes.bool,
-  setSharedWithFilter: PropTypes.func.isRequired,
+  ownedBy: PropTypes.string,
+  sharedWith: PropTypes.string,
+  setSharing: PropTypes.func.isRequired,
 };
