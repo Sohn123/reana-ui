@@ -258,6 +258,7 @@ export default function WorkflowShareModal() {
 
     const usersSharedWith = [];
     const usersNotSharedWith = [];
+    const notificationWarnings = [];
     const requests = [];
 
     setLoadingShareWorkflow(true);
@@ -266,10 +267,17 @@ export default function WorkflowShareModal() {
       const req = client
         .shareWorkflow(id, {
           userEmailToShareWith,
+          message,
           validUntil,
         })
-        .then(() => {
+        .then((resp) => {
           usersSharedWith.push(userEmailToShareWith);
+          for (const warning of resp.data.warnings ?? []) {
+            notificationWarnings.push({
+              userEmailToShareWith,
+              message: warning.message,
+            });
+          }
         })
         .catch((err) => {
           const errorMessage = err.response.data.message;
@@ -292,6 +300,7 @@ export default function WorkflowShareModal() {
       setLastSharingAction({
         usersSharedWith,
         usersNotSharedWith,
+        notificationWarnings,
       });
     });
   };
@@ -397,6 +406,21 @@ export default function WorkflowShareModal() {
               {lastSharingAction.usersNotSharedWith.map((failure, index) => (
                 <Message.Item key={index}>
                   {failure.userEmailToShareWith}: {failure.errorMessage}
+                </Message.Item>
+              ))}
+            </Message.List>
+          </Message>
+        )}
+
+        {lastSharingAction.notificationWarnings?.length > 0 && (
+          <Message warning>
+            <Message.Header>
+              Workflow shared, but some notifications could not be sent
+            </Message.Header>
+            <Message.List>
+              {lastSharingAction.notificationWarnings.map((warning, index) => (
+                <Message.Item key={index}>
+                  {warning.userEmailToShareWith}: {warning.message}
                 </Message.Item>
               ))}
             </Message.List>
