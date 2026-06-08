@@ -11,6 +11,7 @@
 import { Loader, Message, Divider } from "semantic-ui-react";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 import {
   Box,
@@ -23,8 +24,48 @@ import {
   WorkflowActionsPopup,
   InteractiveSessionModal,
 } from "~/components";
+import { getUserEmail } from "~/selectors";
 
 import styles from "./WorkflowList.module.scss";
+
+function WorkflowListItem({ workflow }) {
+  const userEmail = useSelector(getUserEmail);
+  const isOwner = workflow.ownerEmail === userEmail;
+  const sharedWith = workflow.sharedWith ?? [];
+
+  let sharingClass = "";
+  if (!isOwner) {
+    sharingClass = styles["shared-with-me"];
+  } else if (sharedWith.length > 0) {
+    sharingClass = styles["i-shared"];
+  }
+
+  const cardClass = [
+    workflow.status === "deleted" ? styles.deleted : "",
+    sharingClass,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <Box className={cardClass} padding={false} flex={false}>
+      <Link to={`/workflows/${workflow.id}`}>
+        <div className={styles["workflow-details-container"]}>
+          <WorkflowInfo workflow={workflow} actionsOnHover={true} />
+        </div>
+      </Link>
+      <Divider className={styles.divider}></Divider>
+      <div className={styles["badges-and-actions"]}>
+        <WorkflowBadges workflow={workflow} />
+        <WorkflowActionsPopup workflow={workflow} />
+      </div>
+    </Box>
+  );
+}
+
+WorkflowListItem.propTypes = {
+  workflow: PropTypes.object.isRequired,
+};
 
 export default function WorkflowList({ workflows, loading }) {
   if (loading) return <Loader active />;
@@ -33,27 +74,9 @@ export default function WorkflowList({ workflows, loading }) {
   }
   return (
     <>
-      {workflows.map((workflow) => {
-        return (
-          <Box
-            className={workflow.status === "deleted" ? styles.deleted : ""}
-            key={workflow.id}
-            padding={false}
-            flex={false}
-          >
-            <Link key={workflow.id} to={`/workflows/${workflow.id}`}>
-              <div className={styles["workflow-details-container"]}>
-                <WorkflowInfo workflow={workflow} actionsOnHover={true} />
-              </div>
-            </Link>
-            <Divider className={styles.divider}></Divider>
-            <div className={styles["badges-and-actions"]}>
-              <WorkflowBadges workflow={workflow} />
-              <WorkflowActionsPopup workflow={workflow} />
-            </div>
-          </Box>
-        );
-      })}
+      {workflows.map((workflow) => (
+        <WorkflowListItem key={workflow.id} workflow={workflow} />
+      ))}
       <InteractiveSessionModal />
       <WorkflowDeleteModal />
       <WorkflowPruneModal />

@@ -11,6 +11,11 @@
 @import "@palette";
 
 :global(.ui.input).input {
+  :global(input) {
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+  }
+
   :global(input)::placeholder {
     color: $gray;
   }

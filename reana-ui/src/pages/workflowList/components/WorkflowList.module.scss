@@ -19,6 +19,14 @@
   opacity: 0.5;
 }
 
+.shared-with-me {
+  border-left-color: $sui-teal !important;
+}
+
+.i-shared {
+  border-left-color: $sui-violet !important;
+}
+
 .divider {
   margin: 0 !important;
   border-color: $sepia !important;
