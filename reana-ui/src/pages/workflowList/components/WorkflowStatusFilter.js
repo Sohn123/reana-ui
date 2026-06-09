@@ -9,19 +9,14 @@
 */
 
 import PropTypes from "prop-types";
-import { Dropdown } from "semantic-ui-react";
-import { WORKFLOW_STATUSES } from "~/config";
-import { statusMapping } from "~/util";
+import { useState } from "react";
+import { Icon, Menu } from "semantic-ui-react";
 
-// Not including deleted in the dropdown, toggle is the source of truth.
-const statusOptions = WORKFLOW_STATUSES.filter((s) => s !== "deleted").map(
-  (status) => ({
-    key: status,
-    text: status,
-    value: status,
-    icon: statusMapping[status].icon,
-  }),
-);
+import { statusMapping } from "~/util";
+import styles from "./WorkflowStatusFilter.module.scss";
+
+const PRIMARY_STATUSES = ["running", "finished", "failed", "stopped"];
+const MORE_STATUSES = ["created", "queued", "pending"];
 
 export default function WorkflowStatusFilters({
   statusFilter,
@@ -29,22 +24,53 @@ export default function WorkflowStatusFilters({
   hasStatusFilter,
 }) {
   const value = hasStatusFilter ? statusFilter : undefined;
+  const [showMore, setShowMore] = useState(
+    hasStatusFilter && MORE_STATUSES.includes(statusFilter),
+  );
+  const statuses = showMore
+    ? [...PRIMARY_STATUSES, ...MORE_STATUSES]
+    : PRIMARY_STATUSES;
+
+  const statusItem = (status) => (
+    <Menu.Item
+      key={status}
+      name={status}
+      active={value === status}
+      onClick={() => filter(status)}
+    >
+      <Icon
+        name={statusMapping[status].icon}
+        color={statusMapping[status].color}
+      />
+      <span>{status}</span>
+    </Menu.Item>
+  );
 
   return (
-    <Dropdown
-      text={value ? `${value}` : "Any"}
-      selection
-      fluid
-      compact
-      clearable
-      options={statusOptions}
-      onChange={(_, { value: next }) => {
-        const normalized = next || undefined;
-        filter(normalized);
-      }}
-      value={value ?? null}
-      aria-label="Filter by status"
-    />
+    <>
+      <Menu
+        secondary
+        vertical
+        fluid
+        className={styles.statusMenu}
+        aria-label="Filter by status"
+      >
+        <Menu.Item name="any" active={!value} onClick={() => filter(undefined)}>
+          <Icon name="circle outline" />
+          <span>Any status</span>
+        </Menu.Item>
+        {statuses.map(statusItem)}
+      </Menu>
+      <button
+        type="button"
+        className={styles.moreStatuses}
+        onClick={() => setShowMore(!showMore)}
+        aria-expanded={showMore}
+      >
+        <Icon name={showMore ? "chevron up" : "chevron down"} />
+        {showMore ? "Fewer statuses" : "More statuses"}
+      </button>
+    </>
   );
 }
 

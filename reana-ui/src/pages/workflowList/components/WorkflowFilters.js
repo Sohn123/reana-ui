@@ -47,11 +47,17 @@ export default function WorkflowFilters({
 
   const sharedByUserOptions = useMemo(
     () => [
-      { key: "anybody", text: "anybody", value: "anybody" },
+      {
+        key: "anybody",
+        text: "Anybody",
+        value: "anybody",
+        icon: "users",
+      },
       ...usersSharedWithYou.map((user, _) => ({
         key: user.email,
         text: user.email,
         value: user.email,
+        icon: "user outline",
       })),
     ],
     [usersSharedWithYou],
@@ -59,11 +65,17 @@ export default function WorkflowFilters({
 
   const sharedWithUserOptions = useMemo(
     () => [
-      { key: "anybody", text: "anybody", value: "anybody" },
+      {
+        key: "anybody",
+        text: "Anybody",
+        value: "anybody",
+        icon: "users",
+      },
       ...usersYouSharedWith.map((user, _) => ({
         key: user.email,
         text: user.email,
         value: user.email,
+        icon: "user outline",
       })),
     ],
     [usersYouSharedWith],
@@ -82,6 +94,8 @@ export default function WorkflowFilters({
             options={sharedByUserOptions}
             value={sharedByUser || "anybody"}
             onChange={(_, { value }) => setSharedByUser(value)}
+            className={styles.personDropdown}
+            aria-label="Filter by person who shared the workflow"
           />
         </section>
       )}
@@ -97,6 +111,8 @@ export default function WorkflowFilters({
             options={sharedWithUserOptions}
             value={sharedWithUser || "anybody"}
             onChange={(_, { value }) => setSharedWithUser(value)}
+            className={styles.personDropdown}
+            aria-label="Filter by person the workflow was shared with"
           />
         </section>
       )}

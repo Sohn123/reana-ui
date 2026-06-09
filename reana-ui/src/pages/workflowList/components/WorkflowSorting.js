@@ -11,23 +11,31 @@
 import PropTypes from "prop-types";
 import { Dropdown } from "semantic-ui-react";
 
+import styles from "./WorkflowSorting.module.scss";
+
 const sortOptions = [
-  { key: 1, text: "Latest first", value: "desc" },
-  { key: 2, text: "Oldest first", value: "asc" },
-  { key: 3, text: "Most Disk used", value: "disk-desc" },
-  { key: 4, text: "Most CPU used", value: "cpu-desc" },
+  { key: 1, text: "Latest first", value: "desc", icon: "sort amount down" },
+  { key: 2, text: "Oldest first", value: "asc", icon: "sort amount up" },
+  { key: 3, text: "Highest disk usage", value: "disk-desc", icon: "hdd" },
+  { key: 4, text: "Highest CPU usage", value: "cpu-desc", icon: "microchip" },
 ];
 
 export default function WorkflowSorting({ value, sort }) {
+  const selected = sortOptions.find((option) => option.value === value);
+
   return (
-    <Dropdown
-      selection
-      compact
-      options={sortOptions}
-      onChange={(_, data) => sort(data.value)}
-      value={value}
-      aria-label="Sort workflows"
-    />
+    <div className={styles.sorting}>
+      <span className={styles.label}>Sort by</span>
+      <Dropdown
+        inline
+        options={sortOptions}
+        text={selected?.text}
+        onChange={(_, data) => sort(data.value)}
+        value={value}
+        aria-label="Sort workflows"
+        className={styles.dropdown}
+      />
+    </div>
   );
 }
 
