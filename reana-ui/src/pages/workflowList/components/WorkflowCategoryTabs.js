@@ -9,7 +9,7 @@
 */
 
 import PropTypes from "prop-types";
-import { Menu } from "semantic-ui-react";
+import { Icon, Menu } from "semantic-ui-react";
 
 import styles from "./WorkflowCategoryTabs.module.scss";
 
@@ -20,21 +20,33 @@ const CATEGORY_LABELS = {
   "i-shared": "Shared by me",
 };
 
-export default function WorkflowCategoryTabs({ category, setCategory }) {
+export default function WorkflowCategoryTabs({
+  category,
+  setCategory,
+  refreshedAt,
+  refresh,
+}) {
   return (
-    <nav className={styles.navigation} aria-label="Workflow views">
-      <Menu secondary pointing className={styles.categoryMenu}>
-        {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-          <Menu.Item
-            key={value}
-            name={value}
-            content={label}
-            active={category === value}
-            onClick={() => setCategory(value)}
-          />
-        ))}
-      </Menu>
-    </nav>
+    <header className={styles.viewHeader}>
+      <nav className={styles.navigation} aria-label="Workflow views">
+        <Menu secondary pointing className={styles.categoryMenu}>
+          {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+            <Menu.Item
+              key={value}
+              name={value}
+              content={label}
+              active={category === value}
+              onClick={() => setCategory(value)}
+            />
+          ))}
+        </Menu>
+      </nav>
+      <button className={styles.refresh} type="button" onClick={refresh}>
+        <Icon name="refresh" />
+        <span className={styles.refreshLabel}>Refreshed at </span>
+        {refreshedAt}
+      </button>
+    </header>
   );
 }
 
@@ -42,4 +54,6 @@ WorkflowCategoryTabs.propTypes = {
   category: PropTypes.oneOf(["all", "mine", "shared-with-me", "i-shared"])
     .isRequired,
   setCategory: PropTypes.func.isRequired,
+  refreshedAt: PropTypes.string.isRequired,
+  refresh: PropTypes.func.isRequired,
 };

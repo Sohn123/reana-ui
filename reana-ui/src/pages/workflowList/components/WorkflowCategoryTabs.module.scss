@@ -10,10 +10,17 @@
 
 @import "@palette";
 
-.navigation {
-  overflow-x: auto;
-  margin-top: 0.5em;
+.viewHeader {
+  display: flex;
+  align-items: flex-end;
   border-bottom: 1px solid $sepia;
+}
+
+.navigation {
+  min-width: 0;
+  overflow-y: hidden;
+  overflow-x: auto;
+  flex: 1 1 auto;
   scrollbar-width: thin;
 }
 
@@ -32,5 +39,39 @@
 
   :global(.active.item) {
     color: $dark-blue !important;
+  }
+}
+
+.refresh {
+  flex: 0 0 auto;
+  margin: 0 0 0.85em 1.5em;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: $gray;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    color: $dark-gray;
+  }
+}
+
+@media only screen and (max-width: 767px) {
+  .viewHeader {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .refresh {
+    align-self: flex-end;
+    margin: 0 0 0.25em;
+  }
+
+  .refreshLabel {
+    display: none;
   }
 }

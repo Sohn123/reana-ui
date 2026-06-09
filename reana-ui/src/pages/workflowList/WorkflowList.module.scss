@@ -19,25 +19,6 @@
   padding-top: 2.5em;
 }
 
-.title {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-
-  .refresh {
-    color: $gray;
-    font-size: 12px;
-
-    .icon {
-      cursor: pointer;
-
-      &:hover {
-        color: $dark-gray;
-      }
-    }
-  }
-}
-
 :global(.ui.pagination.menu).pagination {
   margin: 2em;
 }

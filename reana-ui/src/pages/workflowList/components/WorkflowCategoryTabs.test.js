@@ -14,11 +14,14 @@ import WorkflowCategoryTabs from "./WorkflowCategoryTabs";
 
 test("renders workflow views and selects a different category", () => {
   const setCategory = jest.fn();
+  const refresh = jest.fn();
 
   render(
     <WorkflowCategoryTabs
       category="shared-with-me"
       setCategory={setCategory}
+      refreshedAt="14:22:02 UTC"
+      refresh={refresh}
     />,
   );
 
@@ -28,8 +31,15 @@ test("renders workflow views and selects a different category", () => {
   expect(screen.getByText("All workflows")).toBeVisible();
   expect(screen.getByText("Shared with me")).toHaveClass("active");
   expect(screen.getByText("Shared by me")).not.toHaveClass("active");
+  expect(
+    screen.getByRole("button", { name: "Refreshed at 14:22:02 UTC" }),
+  ).toBeVisible();
 
   fireEvent.click(screen.getByText("Shared by me"));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Refreshed at 14:22:02 UTC" }),
+  );
 
   expect(setCategory).toHaveBeenCalledWith("i-shared");
+  expect(refresh).toHaveBeenCalled();
 });
