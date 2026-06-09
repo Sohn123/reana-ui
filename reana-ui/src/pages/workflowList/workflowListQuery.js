@@ -43,7 +43,7 @@ const isValidStatus = (status) =>
  * - search: string or absent
  * - sort: "asc" | "desc" | "disk-desc" | "cpu-desc" or absent (default: "desc")
  * - status: workflow status or absent
- * - show-deleted: "true" or absent
+ * - show-deleted: "true" to include deleted runs or absent
  * - open-sessions: "true" or absent
  *
  * Shared-with-me category only:
@@ -145,14 +145,8 @@ export function serializeQueryToApiParams(query) {
   }
 
   let status;
-  if (query.hasStatusFilter) {
-    status = query.includeDeleted
-      ? query.status
-        ? [query.status, "deleted"]
-        : ["deleted"]
-      : query.status
-        ? [query.status]
-        : undefined;
+  if (query.hasStatusFilter && query.status) {
+    status = query.includeDeleted ? [query.status, "deleted"] : [query.status];
   } else {
     status = query.includeDeleted ? undefined : NON_DELETED_STATUSES;
   }

@@ -25,7 +25,7 @@ import {
   getWorkflowRefresh,
   getUsersSharedWithYou,
 } from "~/selectors";
-import { Title, Pagination, Search } from "~/components";
+import { Title, Pagination } from "~/components";
 import BasePage from "../BasePage";
 import Welcome from "./components/Welcome";
 import WorkflowFilters from "./components/WorkflowFilters";
@@ -154,12 +154,10 @@ function Workflows() {
             Refreshed at {refreshedAt}
           </span>
         </Title>
-        <Search
-          value={searchText}
-          onChange={setSearchText}
-          onSubmit={submitSearch}
-        />
         <WorkflowFilters
+          searchText={searchText}
+          setSearchText={setSearchText}
+          submitSearch={submitSearch}
           category={category}
           setCategory={setCategory}
           statusFilter={status}
@@ -175,6 +173,7 @@ function Workflows() {
           setSharedWithUser={setSharedWithUser}
           sortDir={sort}
           setSortDir={setSort}
+          workflowsCount={workflowsCount}
         />
         <WorkflowList workflows={workflowArray} loading={loading} />
         {!loading && (

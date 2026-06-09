@@ -12,17 +12,31 @@ import _ from "lodash";
 import PropTypes from "prop-types";
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Dropdown, Grid } from "semantic-ui-react";
+import { Button, Dropdown, Icon } from "semantic-ui-react";
 
 import { fetchUsersSharedWithYou, fetchUsersYouSharedWith } from "~/actions";
+import { Search } from "~/components";
 import { getUsersSharedWithYou, getUsersYouSharedWith } from "~/selectors";
-import WorkflowCategoryFilter from "./WorkflowCategoryTabs";
 import WorkflowStatusFilter from "./WorkflowStatusFilter";
 import WorkflowSessionFilters from "./WorkflowSessionFilters";
 import WorkflowSorting from "./WorkflowSorting";
 import styles from "./WorkflowFilters.module.scss";
 
+const categoryOptions = [
+  { key: "all", text: "View: All workflows", value: "all" },
+  { key: "mine", text: "View: Mine", value: "mine" },
+  {
+    key: "shared-with-me",
+    text: "View: Shared with me",
+    value: "shared-with-me",
+  },
+  { key: "i-shared", text: "View: I shared", value: "i-shared" },
+];
+
 export default function WorkflowFilters({
+  searchText,
+  setSearchText,
+  submitSearch,
   category,
   setCategory,
   statusFilter,
@@ -30,14 +44,15 @@ export default function WorkflowFilters({
   includeDeleted,
   setIncludeDeleted,
   hasStatusFilter,
-  sortDir,
-  setSortDir,
   sharedByUser,
   setSharedByUser,
   sharedWithUser,
   setSharedWithUser,
   showOpenSessionsOnly,
   setShowOpenSessionsOnly,
+  sortDir,
+  setSortDir,
+  workflowsCount,
 }) {
   const dispatch = useDispatch();
   const usersSharedWithYou = useSelector(getUsersSharedWithYou, _.isEqual);
@@ -77,12 +92,18 @@ export default function WorkflowFilters({
 
   return (
     <div className={styles.container}>
-      {/* Row 1: Category chips + inline contextual user filter */}
-      <div className={styles.categoryRow}>
-        <WorkflowCategoryFilter category={category} setCategory={setCategory} />
-        {category === "shared-with-me" && (
-          <div className={styles.contextualFilter}>
-            <span className={styles.contextLabel}>by</span>
+      <div className={styles.primaryRow}>
+        <div className={styles.viewControls}>
+          <Dropdown
+            selection
+            compact
+            options={categoryOptions}
+            value={category}
+            onChange={(_, { value }) => setCategory(value)}
+            aria-label="Choose workflow view"
+            className={styles.viewControl}
+          />
+          {category === "shared-with-me" && (
             <Dropdown
               compact
               selection
@@ -91,12 +112,11 @@ export default function WorkflowFilters({
               options={sharedByUserOptions}
               value={sharedByUser || "anybody"}
               onChange={(_, { value }) => setSharedByUser(value)}
+              text={`From: ${sharedByUser || "anybody"}`}
+              className={styles.personControl}
             />
-          </div>
-        )}
-        {category === "i-shared" && (
-          <div className={styles.contextualFilter}>
-            <span className={styles.contextLabel}>with</span>
+          )}
+          {category === "i-shared" && (
             <Dropdown
               compact
               selection
@@ -105,33 +125,56 @@ export default function WorkflowFilters({
               options={sharedWithUserOptions}
               value={sharedWithUser || "anybody"}
               onChange={(_, { value }) => setSharedWithUser(value)}
+              text={`With: ${sharedWithUser || "anybody"}`}
+              className={styles.personControl}
             />
-          </div>
-        )}
+          )}
+        </div>
+        <div className={styles.search}>
+          <Search
+            value={searchText}
+            onChange={setSearchText}
+            onSubmit={submitSearch}
+            placeholder="Search by workflow name..."
+          />
+        </div>
       </div>
-
-      {/* Row 2: Utility filters */}
-      <Grid verticalAlign="middle">
+      <div className={styles.filterRow}>
+        <span className={styles.refineLabel}>Refine</span>
         <WorkflowStatusFilter
           statusFilter={statusFilter}
           filter={setStatusFilter}
-          includeDeleted={includeDeleted}
-          setIncludeDeleted={setIncludeDeleted}
           hasStatusFilter={hasStatusFilter}
         />
         <WorkflowSessionFilters
           enabled={showOpenSessionsOnly}
           filter={setShowOpenSessionsOnly}
         />
-        <Grid.Column mobile={16} tablet={4} computer={3} floated="right">
+        <Button
+          basic
+          compact
+          active={includeDeleted}
+          onClick={() => setIncludeDeleted(!includeDeleted)}
+          aria-pressed={includeDeleted}
+        >
+          <Icon name="trash alternate outline" />
+          Show deleted
+        </Button>
+        <div className={styles.resultControls}>
           <WorkflowSorting value={sortDir} sort={setSortDir} />
-        </Grid.Column>
-      </Grid>
+          <span className={styles.resultCount}>
+            {workflowsCount} {workflowsCount === 1 ? "workflow" : "workflows"}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
 
 WorkflowFilters.propTypes = {
+  searchText: PropTypes.string.isRequired,
+  setSearchText: PropTypes.func.isRequired,
+  submitSearch: PropTypes.func.isRequired,
   category: PropTypes.oneOf(["all", "mine", "shared-with-me", "i-shared"])
     .isRequired,
   setCategory: PropTypes.func.isRequired,
@@ -140,12 +183,13 @@ WorkflowFilters.propTypes = {
   includeDeleted: PropTypes.bool.isRequired,
   setIncludeDeleted: PropTypes.func.isRequired,
   hasStatusFilter: PropTypes.bool.isRequired,
-  sortDir: PropTypes.string.isRequired,
-  setSortDir: PropTypes.func.isRequired,
   sharedByUser: PropTypes.string,
   setSharedByUser: PropTypes.func.isRequired,
   sharedWithUser: PropTypes.string,
   setSharedWithUser: PropTypes.func.isRequired,
   showOpenSessionsOnly: PropTypes.bool.isRequired,
   setShowOpenSessionsOnly: PropTypes.func.isRequired,
+  sortDir: PropTypes.string.isRequired,
+  setSortDir: PropTypes.func.isRequired,
+  workflowsCount: PropTypes.number.isRequired,
 };

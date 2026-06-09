@@ -9,18 +9,20 @@
 */
 
 import PropTypes from "prop-types";
-import { Checkbox, Grid } from "semantic-ui-react";
+import { Button, Icon } from "semantic-ui-react";
 
 export default function WorkflowSessionFilters({ enabled, filter }) {
   return (
-    <Grid.Column mobile={16} tablet={4} computer={3} className="center aligned">
-      <Checkbox
-        toggle
-        label="Open sessions"
-        checked={enabled}
-        onChange={(_, { checked }) => filter(!!checked)}
-      />
-    </Grid.Column>
+    <Button
+      basic
+      compact
+      active={enabled}
+      onClick={() => filter(!enabled)}
+      aria-pressed={enabled}
+    >
+      <Icon name="desktop" />
+      Open sessions
+    </Button>
   );
 }
 

@@ -17,6 +17,7 @@ export default function Search({
   onChange,
   onSubmit,
   loading = false,
+  placeholder = "Search...",
 }) {
   const handleChange = (text) => {
     if (typeof onChange === "function") {
@@ -40,7 +41,7 @@ export default function Search({
     <Input
       fluid
       icon="search"
-      placeholder="Search..."
+      placeholder={placeholder}
       value={value}
       className={styles.input}
       onChange={(_, data) => handleChange(data.value)}
@@ -60,5 +61,6 @@ Search.propTypes = {
   onChange: PropTypes.func,
   onSubmit: PropTypes.func,
   loading: PropTypes.bool,
+  placeholder: PropTypes.string,
   search: PropTypes.func,
 };

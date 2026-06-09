@@ -9,7 +9,7 @@
 */
 
 import PropTypes from "prop-types";
-import { Checkbox, Dropdown, Grid } from "semantic-ui-react";
+import { Dropdown } from "semantic-ui-react";
 import { WORKFLOW_STATUSES } from "~/config";
 import { statusMapping } from "~/util";
 
@@ -26,49 +26,29 @@ const statusOptions = WORKFLOW_STATUSES.filter((s) => s !== "deleted").map(
 export default function WorkflowStatusFilters({
   statusFilter,
   filter,
-  includeDeleted,
-  setIncludeDeleted,
   hasStatusFilter,
 }) {
   const value = hasStatusFilter ? statusFilter : undefined;
 
   return (
-    <>
-      <Grid.Column mobile={16} tablet={4} computer={3}>
-        <Dropdown
-          text={value ?? "Status"}
-          fluid
-          selection
-          clearable
-          options={statusOptions}
-          onChange={(_, { value: next }) => {
-            const normalized = next || undefined;
-            filter(normalized);
-          }}
-          value={value ?? null}
-        />
-      </Grid.Column>
-      <Grid.Column
-        mobile={16}
-        tablet={4}
-        computer={3}
-        className="center aligned"
-      >
-        <Checkbox
-          toggle
-          label="Show deleted runs"
-          onChange={(_, { checked }) => setIncludeDeleted(checked)}
-          checked={includeDeleted}
-        />
-      </Grid.Column>
-    </>
+    <Dropdown
+      text={value ? `Status: ${value}` : "Status: Any"}
+      selection
+      compact
+      clearable
+      options={statusOptions}
+      onChange={(_, { value: next }) => {
+        const normalized = next || undefined;
+        filter(normalized);
+      }}
+      value={value ?? null}
+      aria-label="Filter by status"
+    />
   );
 }
 
 WorkflowStatusFilters.propTypes = {
   statusFilter: PropTypes.string,
   filter: PropTypes.func.isRequired,
-  includeDeleted: PropTypes.bool.isRequired,
-  setIncludeDeleted: PropTypes.func.isRequired,
   hasStatusFilter: PropTypes.bool.isRequired,
 };

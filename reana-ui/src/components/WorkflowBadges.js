@@ -36,7 +36,6 @@ export default function WorkflowBadges({ workflow, badgeSize = "tiny" }) {
   const isOwner = ownerEmail === userEmail;
   const isSharedWithMe = !isOwner;
   const iShared = isOwner && sharedWith.length > 0;
-
   const sharedWithLabel =
     sharedWith.length === 1 ? sharedWith[0] : `${sharedWith.length} people`;
 
@@ -95,6 +94,7 @@ export default function WorkflowBadges({ workflow, badgeSize = "tiny" }) {
             <Popup
               trigger={
                 <Label
+                  basic
                   size={badgeSize}
                   content={`Shared with ${sharedWithLabel}`}
                   icon="share alternate"
@@ -102,11 +102,7 @@ export default function WorkflowBadges({ workflow, badgeSize = "tiny" }) {
                 />
               }
               position="top center"
-              content={
-                sharedWith.length === 1
-                  ? `You shared this workflow with ${sharedWith[0]}`
-                  : `You shared this workflow with: ${sharedWith.join(", ")}`
-              }
+              content={`You shared this workflow with: ${sharedWith.join(", ")}`}
             />
           )}
         </>
@@ -115,14 +111,15 @@ export default function WorkflowBadges({ workflow, badgeSize = "tiny" }) {
         <Popup
           trigger={
             <Label
+              basic
               size={badgeSize}
-              content={ownerEmail}
+              content={`Shared by ${ownerEmail}`}
               icon="eye"
               className={styles.sharedWithMeBadge}
             />
           }
           position="top center"
-          content={`This workflow is read-only shared with you by ${ownerEmail}`}
+          content={`This workflow is read-only and shared with you by ${ownerEmail}`}
         />
       )}
     </div>

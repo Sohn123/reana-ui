@@ -11,7 +11,6 @@
 import { Loader, Message, Divider } from "semantic-ui-react";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
-import { useSelector } from "react-redux";
 
 import {
   Box,
@@ -24,28 +23,11 @@ import {
   WorkflowActionsPopup,
   InteractiveSessionModal,
 } from "~/components";
-import { getUserEmail } from "~/selectors";
 
 import styles from "./WorkflowList.module.scss";
 
 function WorkflowListItem({ workflow }) {
-  const userEmail = useSelector(getUserEmail);
-  const isOwner = workflow.ownerEmail === userEmail;
-  const sharedWith = workflow.sharedWith ?? [];
-
-  let sharingClass = "";
-  if (!isOwner) {
-    sharingClass = styles["shared-with-me"];
-  } else if (sharedWith.length > 0) {
-    sharingClass = styles["i-shared"];
-  }
-
-  const cardClass = [
-    workflow.status === "deleted" ? styles.deleted : "",
-    sharingClass,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const cardClass = workflow.status === "deleted" ? styles.deleted : "";
 
   return (
     <Box className={cardClass} padding={false} flex={false}>
