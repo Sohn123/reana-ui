@@ -12,31 +12,21 @@ import _ from "lodash";
 import PropTypes from "prop-types";
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Dropdown, Icon } from "semantic-ui-react";
+import { Checkbox, Dropdown, Menu } from "semantic-ui-react";
 
 import { fetchUsersSharedWithYou, fetchUsersYouSharedWith } from "~/actions";
-import { Search } from "~/components";
 import { getUsersSharedWithYou, getUsersYouSharedWith } from "~/selectors";
 import WorkflowStatusFilter from "./WorkflowStatusFilter";
-import WorkflowSessionFilters from "./WorkflowSessionFilters";
-import WorkflowSorting from "./WorkflowSorting";
 import styles from "./WorkflowFilters.module.scss";
 
-const categoryOptions = [
-  { key: "all", text: "View: All workflows", value: "all" },
-  { key: "mine", text: "View: Mine", value: "mine" },
-  {
-    key: "shared-with-me",
-    text: "View: Shared with me",
-    value: "shared-with-me",
-  },
-  { key: "i-shared", text: "View: I shared", value: "i-shared" },
-];
+const categoryOptions = {
+  all: "All workflows",
+  mine: "Mine",
+  "shared-with-me": "Shared with me",
+  "i-shared": "I shared",
+};
 
 export default function WorkflowFilters({
-  searchText,
-  setSearchText,
-  submitSearch,
   category,
   setCategory,
   statusFilter,
@@ -50,9 +40,6 @@ export default function WorkflowFilters({
   setSharedWithUser,
   showOpenSessionsOnly,
   setShowOpenSessionsOnly,
-  sortDir,
-  setSortDir,
-  workflowsCount,
 }) {
   const dispatch = useDispatch();
   const usersSharedWithYou = useSelector(getUsersSharedWithYou, _.isEqual);
@@ -91,90 +78,81 @@ export default function WorkflowFilters({
   );
 
   return (
-    <div className={styles.container}>
-      <div className={styles.primaryRow}>
-        <div className={styles.viewControls}>
+    <aside className={styles.sidebar}>
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>Category</h3>
+        <Menu vertical fluid secondary className={styles.scopeMenu}>
+          {Object.entries(categoryOptions).map(([value, label]) => (
+            <Menu.Item
+              key={value}
+              name={label}
+              active={category === value}
+              onClick={() => setCategory(value)}
+            />
+          ))}
+        </Menu>
+      </section>
+
+      {category === "shared-with-me" && (
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Shared by</h3>
           <Dropdown
+            fluid
             selection
-            compact
-            options={categoryOptions}
-            value={category}
-            onChange={(_, { value }) => setCategory(value)}
-            aria-label="Choose workflow view"
-            className={styles.viewControl}
+            search
+            scrolling
+            options={sharedByUserOptions}
+            value={sharedByUser || "anybody"}
+            onChange={(_, { value }) => setSharedByUser(value)}
           />
-          {category === "shared-with-me" && (
-            <Dropdown
-              compact
-              selection
-              search
-              scrolling
-              options={sharedByUserOptions}
-              value={sharedByUser || "anybody"}
-              onChange={(_, { value }) => setSharedByUser(value)}
-              text={`From: ${sharedByUser || "anybody"}`}
-              className={styles.personControl}
-            />
-          )}
-          {category === "i-shared" && (
-            <Dropdown
-              compact
-              selection
-              search
-              scrolling
-              options={sharedWithUserOptions}
-              value={sharedWithUser || "anybody"}
-              onChange={(_, { value }) => setSharedWithUser(value)}
-              text={`With: ${sharedWithUser || "anybody"}`}
-              className={styles.personControl}
-            />
-          )}
-        </div>
-        <div className={styles.search}>
-          <Search
-            value={searchText}
-            onChange={setSearchText}
-            onSubmit={submitSearch}
-            placeholder="Search by workflow name..."
+        </section>
+      )}
+
+      {category === "i-shared" && (
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Shared with</h3>
+          <Dropdown
+            fluid
+            selection
+            search
+            scrolling
+            options={sharedWithUserOptions}
+            value={sharedWithUser || "anybody"}
+            onChange={(_, { value }) => setSharedWithUser(value)}
           />
-        </div>
-      </div>
-      <div className={styles.filterRow}>
-        <span className={styles.refineLabel}>Refine</span>
+        </section>
+      )}
+
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>Status</h3>
         <WorkflowStatusFilter
           statusFilter={statusFilter}
           filter={setStatusFilter}
           hasStatusFilter={hasStatusFilter}
+          fluid
         />
-        <WorkflowSessionFilters
-          enabled={showOpenSessionsOnly}
-          filter={setShowOpenSessionsOnly}
-        />
-        <Button
-          basic
-          compact
-          active={includeDeleted}
-          onClick={() => setIncludeDeleted(!includeDeleted)}
-          aria-pressed={includeDeleted}
-        >
-          <Icon name="trash alternate outline" />
-          Show deleted
-        </Button>
-        <div className={styles.resultControls}>
-          <WorkflowSorting value={sortDir} sort={setSortDir} />
-          <span className={styles.resultCount}>
-            {workflowsCount} {workflowsCount === 1 ? "workflow" : "workflows"}
-          </span>
+      </section>
+
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>Options</h3>
+        <div className={styles.options}>
+          <Checkbox
+            label="Open sessions only"
+            checked={showOpenSessionsOnly}
+            onChange={(_, { checked }) => setShowOpenSessionsOnly(!!checked)}
+          />
+          <Checkbox
+            label="Show deleted runs"
+            checked={includeDeleted}
+            onChange={(_, { checked }) => setIncludeDeleted(!!checked)}
+          />
         </div>
-      </div>
-    </div>
+      </section>
+    </aside>
   );
 }
 
 WorkflowFilters.propTypes = {
-  searchText: PropTypes.string.isRequired,
-  setSearchText: PropTypes.func.isRequired,
-  submitSearch: PropTypes.func.isRequired,
   category: PropTypes.oneOf(["all", "mine", "shared-with-me", "i-shared"])
     .isRequired,
   setCategory: PropTypes.func.isRequired,
@@ -189,7 +167,4 @@ WorkflowFilters.propTypes = {
   setSharedWithUser: PropTypes.func.isRequired,
   showOpenSessionsOnly: PropTypes.bool.isRequired,
   setShowOpenSessionsOnly: PropTypes.func.isRequired,
-  sortDir: PropTypes.string.isRequired,
-  setSortDir: PropTypes.func.isRequired,
-  workflowsCount: PropTypes.number.isRequired,
 };

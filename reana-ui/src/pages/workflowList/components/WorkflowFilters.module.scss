@@ -10,126 +10,73 @@
 
 @import "@palette";
 
-.container {
-  margin-bottom: 1em;
-  padding: 0.65em;
+.sidebar {
+  position: sticky;
+  top: 1.5em;
+  padding: 1.1em;
   border: 1px solid $sepia;
-  border-radius: 0.3em;
+  border-radius: 0.35em;
   background-color: lighten($sepia, 4%);
 }
 
-.primaryRow,
-.filterRow {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
+.section + .section {
+  margin-top: 1.35em;
+  padding-top: 1.25em;
+  border-top: 1px solid $sepia;
+}
 
-  :global(.ui.selection.dropdown),
-  :global(.ui.basic.button) {
-    min-height: 2.65em;
-    background-color: white !important;
+.sectionTitle {
+  margin: 0 0 0.65em;
+  color: $dark-blue;
+  font-size: 0.82em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:global(.ui.secondary.vertical.menu).scopeMenu {
+  width: 100%;
+  margin: 0;
+
+  :global(.item) {
+    margin: 0.15em 0;
+    padding: 0.65em 0.7em !important;
+    border-radius: 0.3em !important;
   }
 
-  :global(.ui.basic.button.active) {
-    border-color: $dark-blue !important;
+  :global(.active.item) {
     background-color: $dark-blue !important;
     color: white !important;
   }
 }
 
-.primaryRow {
-  margin-bottom: 0.65em;
-}
-
-.search {
-  flex: 1;
-  min-width: 16em;
-}
-
-.filterRow {
-  min-width: 0;
-}
-
-.viewControls {
+.options {
   display: flex;
-  flex: 0 0 auto;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 1em;
 
-  :global(.ui.selection.dropdown) {
-    border-radius: 0 !important;
-  }
-
-  :global(.ui.selection.dropdown > .dropdown.icon) {
-    display: block !important;
-    opacity: 0.8 !important;
-  }
-
-  :global(.ui.selection.dropdown:first-child) {
-    border-top-left-radius: 0.28571429rem !important;
-    border-bottom-left-radius: 0.28571429rem !important;
-  }
-
-  :global(.ui.selection.dropdown:last-child) {
-    border-top-right-radius: 0.28571429rem !important;
-    border-bottom-right-radius: 0.28571429rem !important;
-  }
-
-  :global(.ui.selection.dropdown + .ui.selection.dropdown) {
-    margin-left: -1px;
+  :global(.ui.checkbox label) {
+    color: $raven;
   }
 }
 
-.viewControl {
-  min-width: 13em !important;
-}
+@media only screen and (max-width: 991px) {
+  .sidebar {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5em;
+  }
 
-.personControl {
-  min-width: 12em !important;
-}
-
-.resultCount {
-  color: $raven;
-  white-space: nowrap;
-}
-
-.resultControls {
-  display: flex;
-  align-items: center;
-  gap: 0.75em;
-  flex: 0 0 auto;
-  margin-left: auto;
-}
-
-.refineLabel {
-  color: $raven;
-  font-size: 0.85em;
-  font-weight: bold;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
+  .section + .section {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
 }
 
 @media only screen and (max-width: 767px) {
-  .primaryRow {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .viewControls {
-    width: 100%;
-
-    :global(.ui.selection.dropdown) {
-      flex: 1;
-      min-width: 0 !important;
-    }
-  }
-
-  .filterRow {
-    flex-wrap: wrap;
-  }
-
-  .resultControls {
-    justify-content: space-between;
-    width: 100%;
-    margin-left: 0;
+  .sidebar {
+    grid-template-columns: 1fr;
   }
 }

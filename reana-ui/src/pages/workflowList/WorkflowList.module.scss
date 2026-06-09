@@ -16,7 +16,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding-top: 4em;
+  padding-top: 2.5em;
 }
 
 .title {
@@ -43,7 +43,96 @@
 }
 
 :global(.ui.text.container).workflow-list-container {
-  max-width: 1200px !important;
+  max-width: 1380px !important;
+}
+
+.browser {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  align-items: start;
+  gap: 2em;
+  margin-top: 0.5em;
+}
+
+.results {
+  min-width: 0;
+}
+
+.resultsHeader {
+  position: sticky;
+  z-index: 2;
+  top: 1.5em;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid $sepia;
+  background-color: white;
+
+  &::before {
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    left: 0;
+    height: 1.5em;
+    background-color: white;
+    content: "";
+  }
+}
+
+.resultsHeaderControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+}
+
+.search {
+  flex: 0 1 520px;
+  width: 100%;
+  min-width: 14em;
+}
+
+.resultControls {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  flex: 0 0 auto;
+}
+
+.resultSummary {
+  margin-top: 0.5em;
+  color: $raven;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+@media only screen and (max-width: 991px) {
+  .browser {
+    grid-template-columns: 1fr;
+    gap: 1.25em;
+  }
+}
+
+@media only screen and (max-width: 767px) {
+  .resultsHeader {
+    top: 0;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .resultsHeaderControls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search {
+    max-width: none;
+  }
+
+  .resultControls {
+    justify-content: space-between;
+  }
 }
 
 .paginationRow {

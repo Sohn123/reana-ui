@@ -12,10 +12,10 @@ import PropTypes from "prop-types";
 import { Dropdown } from "semantic-ui-react";
 
 const sortOptions = [
-  { key: 1, text: "Sort: Latest first", value: "desc" },
-  { key: 2, text: "Sort: Oldest first", value: "asc" },
-  { key: 3, text: "Sort: Most Disk used", value: "disk-desc" },
-  { key: 4, text: "Sort: Most CPU used", value: "cpu-desc" },
+  { key: 1, text: "Latest first", value: "desc" },
+  { key: 2, text: "Oldest first", value: "asc" },
+  { key: 3, text: "Most Disk used", value: "disk-desc" },
+  { key: 4, text: "Most CPU used", value: "cpu-desc" },
 ];
 
 export default function WorkflowSorting({ value, sort }) {

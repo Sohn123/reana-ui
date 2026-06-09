@@ -32,8 +32,9 @@ export default function WorkflowStatusFilters({
 
   return (
     <Dropdown
-      text={value ? `Status: ${value}` : "Status: Any"}
+      text={value ? `${value}` : "Any"}
       selection
+      fluid
       compact
       clearable
       options={statusOptions}

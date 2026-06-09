@@ -25,11 +25,12 @@ import {
   getWorkflowRefresh,
   getUsersSharedWithYou,
 } from "~/selectors";
-import { Title, Pagination } from "~/components";
+import { Title, Pagination, Search } from "~/components";
 import BasePage from "../BasePage";
 import Welcome from "./components/Welcome";
 import WorkflowFilters from "./components/WorkflowFilters";
 import WorkflowList from "./components/WorkflowList";
+import WorkflowSorting from "./components/WorkflowSorting";
 import { useWorkflowListQuery } from "./useWorkflowListQuery";
 import { WORKFLOW_LIST_PAGE_SIZE_OPTIONS } from "./workflowListQuery";
 import styles from "./WorkflowList.module.scss";
@@ -154,28 +155,45 @@ function Workflows() {
             Refreshed at {refreshedAt}
           </span>
         </Title>
-        <WorkflowFilters
-          searchText={searchText}
-          setSearchText={setSearchText}
-          submitSearch={submitSearch}
-          category={category}
-          setCategory={setCategory}
-          statusFilter={status}
-          setStatusFilter={setStatus}
-          includeDeleted={includeDeleted}
-          setIncludeDeleted={setIncludeDeleted}
-          hasStatusFilter={hasStatusFilter}
-          showOpenSessionsOnly={showOpenSessionsOnly}
-          setShowOpenSessionsOnly={setShowOpenSessionsOnly}
-          sharedByUser={sharedByUser}
-          setSharedByUser={setSharedByUser}
-          sharedWithUser={sharedWithUser}
-          setSharedWithUser={setSharedWithUser}
-          sortDir={sort}
-          setSortDir={setSort}
-          workflowsCount={workflowsCount}
-        />
-        <WorkflowList workflows={workflowArray} loading={loading} />
+        <div className={styles.browser}>
+          <WorkflowFilters
+            category={category}
+            setCategory={setCategory}
+            statusFilter={status}
+            setStatusFilter={setStatus}
+            includeDeleted={includeDeleted}
+            setIncludeDeleted={setIncludeDeleted}
+            hasStatusFilter={hasStatusFilter}
+            showOpenSessionsOnly={showOpenSessionsOnly}
+            setShowOpenSessionsOnly={setShowOpenSessionsOnly}
+            sharedByUser={sharedByUser}
+            setSharedByUser={setSharedByUser}
+            sharedWithUser={sharedWithUser}
+            setSharedWithUser={setSharedWithUser}
+          />
+          <main className={styles.results}>
+            <div className={styles.resultsHeader}>
+              <div className={styles.resultsHeaderControls}>
+                <div className={styles.search}>
+                  <Search
+                    value={searchText}
+                    onChange={setSearchText}
+                    onSubmit={submitSearch}
+                    placeholder="Search by workflow name..."
+                  />
+                </div>
+                <div className={styles.resultControls}>
+                  <WorkflowSorting value={sort} sort={setSort} />
+                </div>
+              </div>
+              <div className={styles.resultSummary}>
+                {workflowsCount}{" "}
+                {workflowsCount === 1 ? "workflow" : "workflows"}
+              </div>
+            </div>
+            <WorkflowList workflows={workflowArray} loading={loading} />
+          </main>
+        </div>
         {!loading && (
           <div className={styles.paginationRow}>
             {/* To emulate size of page-size dropdown and ensure page buttons stay in middle of screen */}
