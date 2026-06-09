@@ -10,18 +10,27 @@
 
 @import "@palette";
 
-.categoryGroup {
-  margin-bottom: 0 !important;
+.navigation {
+  overflow-x: auto;
+  margin-top: 0.5em;
+  border-bottom: 1px solid $sepia;
+  scrollbar-width: thin;
+}
 
-  // Lock font-weight so text width never changes between active/inactive states,
-  // which would cause neighboring buttons to shift horizontally.
-  :global(.ui.button) {
-    font-weight: 400 !important;
+.categoryMenu {
+  width: max-content;
+  min-width: 100%;
+  margin: 0 !important;
+  border-bottom: 0 !important;
+
+  :global(.item) {
+    flex: 0 0 auto;
+    margin-bottom: -1px !important;
+    padding: 0.85em 1.25em !important;
+    color: $raven !important;
   }
 
-  :global(.ui.button.active) {
-    font-weight: 400 !important;
-    background-color: $sepia !important;
+  :global(.active.item) {
     color: $dark-blue !important;
   }
 }

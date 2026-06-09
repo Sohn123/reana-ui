@@ -28,6 +28,7 @@ import {
 import { Title, Pagination, Search } from "~/components";
 import BasePage from "../BasePage";
 import Welcome from "./components/Welcome";
+import WorkflowCategoryTabs from "./components/WorkflowCategoryTabs";
 import WorkflowFilters from "./components/WorkflowFilters";
 import WorkflowList from "./components/WorkflowList";
 import WorkflowSorting from "./components/WorkflowSorting";
@@ -155,10 +156,10 @@ function Workflows() {
             Refreshed at {refreshedAt}
           </span>
         </Title>
+        <WorkflowCategoryTabs category={category} setCategory={setCategory} />
         <div className={styles.browser}>
           <WorkflowFilters
             category={category}
-            setCategory={setCategory}
             statusFilter={status}
             setStatusFilter={setStatus}
             includeDeleted={includeDeleted}

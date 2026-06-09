@@ -9,34 +9,36 @@
 */
 
 import PropTypes from "prop-types";
-import { Button } from "semantic-ui-react";
+import { Menu } from "semantic-ui-react";
 
 import styles from "./WorkflowCategoryTabs.module.scss";
 
 const CATEGORY_LABELS = {
-  all: "All",
+  all: "All workflows",
   mine: "Mine",
   "shared-with-me": "Shared with me",
-  "i-shared": "I shared",
+  "i-shared": "Shared by me",
 };
 
-export default function WorkflowCategoryFilter({ category, setCategory }) {
+export default function WorkflowCategoryTabs({ category, setCategory }) {
   return (
-    <Button.Group basic size="small" className={styles.categoryGroup}>
-      {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-        <Button
-          key={value}
-          active={category === value}
-          onClick={() => setCategory(value)}
-        >
-          {label}
-        </Button>
-      ))}
-    </Button.Group>
+    <nav className={styles.navigation} aria-label="Workflow views">
+      <Menu secondary pointing className={styles.categoryMenu}>
+        {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+          <Menu.Item
+            key={value}
+            name={value}
+            content={label}
+            active={category === value}
+            onClick={() => setCategory(value)}
+          />
+        ))}
+      </Menu>
+    </nav>
   );
 }
 
-WorkflowCategoryFilter.propTypes = {
+WorkflowCategoryTabs.propTypes = {
   category: PropTypes.oneOf(["all", "mine", "shared-with-me", "i-shared"])
     .isRequired,
   setCategory: PropTypes.func.isRequired,

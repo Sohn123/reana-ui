@@ -33,22 +33,6 @@
   text-transform: uppercase;
 }
 
-:global(.ui.secondary.vertical.menu).scopeMenu {
-  width: 100%;
-  margin: 0;
-
-  :global(.item) {
-    margin: 0.15em 0;
-    padding: 0.65em 0.7em !important;
-    border-radius: 0.3em !important;
-  }
-
-  :global(.active.item) {
-    background-color: $dark-blue !important;
-    color: white !important;
-  }
-}
-
 .options {
   display: flex;
   align-items: flex-start;

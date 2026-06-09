@@ -12,23 +12,15 @@ import _ from "lodash";
 import PropTypes from "prop-types";
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Checkbox, Dropdown, Menu } from "semantic-ui-react";
+import { Checkbox, Dropdown } from "semantic-ui-react";
 
 import { fetchUsersSharedWithYou, fetchUsersYouSharedWith } from "~/actions";
 import { getUsersSharedWithYou, getUsersYouSharedWith } from "~/selectors";
 import WorkflowStatusFilter from "./WorkflowStatusFilter";
 import styles from "./WorkflowFilters.module.scss";
 
-const categoryOptions = {
-  all: "All workflows",
-  mine: "Mine",
-  "shared-with-me": "Shared with me",
-  "i-shared": "I shared",
-};
-
 export default function WorkflowFilters({
   category,
-  setCategory,
   statusFilter,
   setStatusFilter,
   includeDeleted,
@@ -79,20 +71,6 @@ export default function WorkflowFilters({
 
   return (
     <aside className={styles.sidebar}>
-      <section className={styles.section}>
-        <h3 className={styles.sectionTitle}>Category</h3>
-        <Menu vertical fluid secondary className={styles.scopeMenu}>
-          {Object.entries(categoryOptions).map(([value, label]) => (
-            <Menu.Item
-              key={value}
-              name={label}
-              active={category === value}
-              onClick={() => setCategory(value)}
-            />
-          ))}
-        </Menu>
-      </section>
-
       {category === "shared-with-me" && (
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>Shared by</h3>
@@ -155,7 +133,6 @@ export default function WorkflowFilters({
 WorkflowFilters.propTypes = {
   category: PropTypes.oneOf(["all", "mine", "shared-with-me", "i-shared"])
     .isRequired,
-  setCategory: PropTypes.func.isRequired,
   statusFilter: PropTypes.string,
   setStatusFilter: PropTypes.func.isRequired,
   includeDeleted: PropTypes.bool.isRequired,
