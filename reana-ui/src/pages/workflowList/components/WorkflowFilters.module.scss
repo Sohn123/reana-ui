@@ -12,7 +12,7 @@
 
 .sidebar {
   position: sticky;
-  top: 1.5em;
+  top: calc(var(--workflow-view-header-height) + 1.5em);
   padding: 1.1em;
   border: 1px solid $sepia;
   border-radius: 0.35em;
