@@ -12,12 +12,29 @@ import _ from "lodash";
 import PropTypes from "prop-types";
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Checkbox, Dropdown } from "semantic-ui-react";
+import { Dropdown } from "semantic-ui-react";
 
 import { fetchUsersSharedWithYou, fetchUsersYouSharedWith } from "~/actions";
 import { getUsersSharedWithYou, getUsersYouSharedWith } from "~/selectors";
+import WorkflowRefinementMenu from "./WorkflowRefinementMenu";
 import WorkflowStatusFilter from "./WorkflowStatusFilter";
 import styles from "./WorkflowFilters.module.scss";
+
+const SHARING_OPTIONS = [
+  { value: "all", label: "All", icon: "list" },
+  { value: "nobody", label: "Not shared", icon: "lock" },
+  { value: "anybody", label: "Shared with others", icon: "share alternate" },
+];
+
+const SESSION_OPTIONS = [
+  { value: "all", label: "All workflows", icon: "list" },
+  { value: "open", label: "Open sessions only", icon: "desktop" },
+];
+
+const DELETED_OPTIONS = [
+  { value: "hidden", label: "Hide deleted runs", icon: "eye slash" },
+  { value: "included", label: "Include deleted runs", icon: "eye" },
+];
 
 export default function WorkflowFilters({
   category,
@@ -40,10 +57,14 @@ export default function WorkflowFilters({
   useEffect(() => {
     if (category === "shared-with-me") {
       dispatch(fetchUsersSharedWithYou());
-    } else if (category === "i-shared") {
+    } else if (
+      category === "mine" &&
+      sharedWithUser &&
+      sharedWithUser !== "nobody"
+    ) {
       dispatch(fetchUsersYouSharedWith());
     }
-  }, [dispatch, category]);
+  }, [dispatch, category, sharedWithUser]);
 
   const sharedByUserOptions = useMemo(
     () => [
@@ -101,21 +122,40 @@ export default function WorkflowFilters({
         </section>
       )}
 
-      {category === "i-shared" && (
+      {category === "mine" && (
         <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>Shared with</h3>
-          <Dropdown
-            fluid
-            selection
-            compact
-            search
-            scrolling
-            options={sharedWithUserOptions}
-            value={sharedWithUser || "anybody"}
-            onChange={(_, { value }) => setSharedWithUser(value)}
-            className={styles.personDropdown}
-            aria-label="Filter by person the workflow was shared with"
+          <h3 className={styles.sectionTitle}>Sharing</h3>
+          <WorkflowRefinementMenu
+            ariaLabel="Filter your workflows by sharing"
+            options={SHARING_OPTIONS}
+            value={
+              sharedWithUser === "nobody"
+                ? "nobody"
+                : sharedWithUser
+                  ? "anybody"
+                  : "all"
+            }
+            onChange={(value) =>
+              setSharedWithUser(value === "all" ? undefined : value)
+            }
           />
+          {sharedWithUser && sharedWithUser !== "nobody" && (
+            <div className={styles.contextualDropdown}>
+              <label className={styles.dropdownLabel}>Shared with</label>
+              <Dropdown
+                fluid
+                selection
+                compact
+                search
+                scrolling
+                options={sharedWithUserOptions}
+                value={sharedWithUser}
+                onChange={(_, { value }) => setSharedWithUser(value)}
+                className={styles.personDropdown}
+                aria-label="Filter by person the workflow was shared with"
+              />
+            </div>
+          )}
         </section>
       )}
 
@@ -130,27 +170,30 @@ export default function WorkflowFilters({
       </section>
 
       <section className={styles.section}>
-        <h3 className={styles.sectionTitle}>Options</h3>
-        <div className={styles.options}>
-          <Checkbox
-            label="Open sessions only"
-            checked={showOpenSessionsOnly}
-            onChange={(_, { checked }) => setShowOpenSessionsOnly(!!checked)}
-          />
-          <Checkbox
-            label="Show deleted runs"
-            checked={includeDeleted}
-            onChange={(_, { checked }) => setIncludeDeleted(!!checked)}
-          />
-        </div>
+        <h3 className={styles.sectionTitle}>Sessions</h3>
+        <WorkflowRefinementMenu
+          ariaLabel="Filter by session availability"
+          options={SESSION_OPTIONS}
+          value={showOpenSessionsOnly ? "open" : "all"}
+          onChange={(value) => setShowOpenSessionsOnly(value === "open")}
+        />
+      </section>
+
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>Deleted runs</h3>
+        <WorkflowRefinementMenu
+          ariaLabel="Choose deleted run visibility"
+          options={DELETED_OPTIONS}
+          value={includeDeleted ? "included" : "hidden"}
+          onChange={(value) => setIncludeDeleted(value === "included")}
+        />
       </section>
     </aside>
   );
 }
 
 WorkflowFilters.propTypes = {
-  category: PropTypes.oneOf(["all", "mine", "shared-with-me", "i-shared"])
-    .isRequired,
+  category: PropTypes.oneOf(["mine", "shared-with-me"]).isRequired,
   statusFilter: PropTypes.string,
   setStatusFilter: PropTypes.func.isRequired,
   includeDeleted: PropTypes.bool.isRequired,

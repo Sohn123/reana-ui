@@ -68,6 +68,33 @@ export function useWorkflowListQuery() {
     }
   }, [searchParams, setSearchParams]);
 
+  useEffect(() => {
+    const rawCategory = searchParams.get("category");
+    const isLegacyOwnedSharingView =
+      rawCategory === "i-shared" || searchParams.get("shared-with") === "true";
+    const shouldNormalizeCategory =
+      rawCategory === "all" ||
+      rawCategory === "i-shared" ||
+      searchParams.has("shared-with");
+
+    if (shouldNormalizeCategory) {
+      updateParams(
+        setSearchParams,
+        (next) => {
+          next.delete("category");
+          next.delete("shared-with");
+          next.delete("shared");
+          next.delete("shared-by");
+          if (isLegacyOwnedSharingView && !next.has("shared-with-user")) {
+            next.set("shared-with-user", "anybody");
+          }
+          resetPage(next);
+        },
+        { replace: true },
+      );
+    }
+  }, [searchParams, setSearchParams]);
+
   const submitSearch = useCallback(() => {
     const nextSearch = searchText.trim();
     updateParams(setSearchParams, (next) => {
@@ -202,7 +229,7 @@ export function useWorkflowListQuery() {
   const setSharedWithUser = useCallback(
     (email) => {
       updateParams(setSearchParams, (next) => {
-        if (email && email !== "anybody") {
+        if (email) {
           next.set("shared-with-user", email);
         } else {
           next.delete("shared-with-user");

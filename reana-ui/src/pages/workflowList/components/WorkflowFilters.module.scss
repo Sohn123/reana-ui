@@ -104,34 +104,18 @@
   }
 }
 
-.options {
-  display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 1em;
+.contextualDropdown {
+  margin-top: 0.75em;
+  padding-top: 0.75em;
+  border-top: 1px solid $sepia;
+}
 
-  :global(.ui.checkbox label) {
-    color: $raven;
-
-    &::before {
-      border-color: darken($sepia, 8%) !important;
-      border-radius: 0.25em;
-      background-color: rgba(white, 0.75) !important;
-    }
-  }
-
-  :global(.ui.checkbox input:checked ~ label) {
-    color: $dark-blue;
-
-    &::before {
-      border-color: $dark-blue !important;
-      background-color: $dark-blue !important;
-    }
-
-    &::after {
-      color: white !important;
-    }
-  }
+.dropdownLabel {
+  display: block;
+  margin-bottom: 0.45em;
+  color: $raven;
+  font-size: 0.78em;
+  font-weight: 600;
 }
 
 @media only screen and (max-width: 991px) {

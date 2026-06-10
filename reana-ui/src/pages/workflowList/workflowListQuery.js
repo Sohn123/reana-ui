@@ -21,13 +21,8 @@ export const WORKFLOW_LIST_PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100].map(
 export const WORKFLOW_LIST_DEFAULT_PAGE_SIZE =
   WORKFLOW_LIST_PAGE_SIZE_OPTIONS[1].value;
 
-export const WORKFLOW_LIST_CATEGORIES = [
-  "all",
-  "mine",
-  "shared-with-me",
-  "i-shared",
-];
-export const WORKFLOW_LIST_DEFAULT_CATEGORY = "all";
+export const WORKFLOW_LIST_CATEGORIES = ["mine", "shared-with-me"];
+export const WORKFLOW_LIST_DEFAULT_CATEGORY = "mine";
 
 const isPositiveInteger = (value) => Number.isFinite(value) && value > 0;
 const isValidStatus = (status) =>
@@ -37,7 +32,7 @@ const isValidStatus = (status) =>
  * Normalized workflow list query state parsed from URL search parameters.
  *
  * URL Parameter Contract:
- * - category: "all" | "mine" | "shared-with-me" | "i-shared" or absent (default: "all")
+ * - category: "mine" | "shared-with-me" or absent (default: "mine")
  * - page: positive integer or absent (default: 1)
  * - page-size: positive integer or absent (default: 10)
  * - search: string or absent
@@ -49,8 +44,8 @@ const isValidStatus = (status) =>
  * Shared-with-me category only:
  * - shared-by: user email or absent (default: anybody)
  *
- * I-shared category only:
- * - shared-with-user: user email or absent (default: anybody)
+ * Mine category only:
+ * - shared-with-user: "nobody" | "anybody" | user email or absent (default: all)
  *
  */
 export function parseWorkflowListQuery(searchParams) {
@@ -68,10 +63,10 @@ export function parseWorkflowListQuery(searchParams) {
   // Determine category. Explicit ?category= takes priority
   const rawCategory = searchParams.get("category");
   let category;
-  if (WORKFLOW_LIST_CATEGORIES.includes(rawCategory)) {
+  if (rawCategory === "all" || rawCategory === "i-shared") {
+    category = "mine";
+  } else if (WORKFLOW_LIST_CATEGORIES.includes(rawCategory)) {
     category = rawCategory;
-  } else if (searchParams.get("shared-with") === "true") {
-    category = "i-shared";
   } else if (
     searchParams.get("shared") === "true" ||
     searchParams.get("shared-by")
@@ -94,10 +89,14 @@ export function parseWorkflowListQuery(searchParams) {
       ? searchParams.get("shared-by") || "anybody"
       : undefined;
 
-  // User filter for "i shared" category (who I shared with)
+  // Sharing refinement for owned workflows
   const sharedWithUser =
-    category === "i-shared"
-      ? searchParams.get("shared-with-user") || "anybody"
+    category === "mine"
+      ? searchParams.get("shared-with-user") ||
+        (rawCategory === "i-shared" ||
+        searchParams.get("shared-with") === "true"
+          ? "anybody"
+          : undefined)
       : undefined;
 
   return {
@@ -122,26 +121,16 @@ export function parseWorkflowListQuery(searchParams) {
 export function serializeQueryToApiParams(query) {
   let shared, sharedBy, sharedWith;
 
-  if (query.category === "all") {
-    // Union of owned + shared-with-me
-    shared = true;
-    sharedBy = undefined;
-    sharedWith = undefined;
-  } else if (query.category === "shared-with-me") {
+  if (query.category === "shared-with-me") {
     // shared_by="anybody" returns ONLY workflows others shared with me (not the union).
     shared = false;
     sharedBy = query.sharedByUser || "anybody";
     sharedWith = undefined;
-  } else if (query.category === "i-shared") {
-    shared = false;
-    sharedBy = undefined;
-    // Backend expects the string "anybody", not a boolean.
-    sharedWith = query.sharedWithUser || "anybody";
   } else {
-    // "mine" category
+    // Owned workflows, optionally refined by who they are shared with.
     shared = false;
     sharedBy = undefined;
-    sharedWith = undefined;
+    sharedWith = query.sharedWithUser;
   }
 
   let status;

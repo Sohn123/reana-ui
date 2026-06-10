@@ -28,18 +28,18 @@ test("renders workflow views and selects a different category", () => {
   expect(
     screen.getByRole("navigation", { name: "Workflow views" }),
   ).toBeVisible();
-  expect(screen.getByText("All workflows")).toBeVisible();
-  expect(screen.getByText("Shared with me")).toHaveClass("active");
-  expect(screen.getByText("Shared by me")).not.toHaveClass("active");
+  expect(screen.getByText("Your workflows")).not.toHaveClass("active");
+  expect(screen.getByText("Shared with you")).toHaveClass("active");
+  expect(screen.queryByText("All workflows")).not.toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: "Refreshed at 14:22:02 UTC" }),
   ).toBeVisible();
 
-  fireEvent.click(screen.getByText("Shared by me"));
+  fireEvent.click(screen.getByText("Your workflows"));
   fireEvent.click(
     screen.getByRole("button", { name: "Refreshed at 14:22:02 UTC" }),
   );
 
-  expect(setCategory).toHaveBeenCalledWith("i-shared");
+  expect(setCategory).toHaveBeenCalledWith("mine");
   expect(refresh).toHaveBeenCalled();
 });

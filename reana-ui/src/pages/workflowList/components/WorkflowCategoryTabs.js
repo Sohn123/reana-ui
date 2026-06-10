@@ -14,10 +14,8 @@ import { Icon, Menu } from "semantic-ui-react";
 import styles from "./WorkflowCategoryTabs.module.scss";
 
 const CATEGORY_LABELS = {
-  all: "All workflows",
-  mine: "Mine",
-  "shared-with-me": "Shared with me",
-  "i-shared": "Shared by me",
+  mine: "Your workflows",
+  "shared-with-me": "Shared with you",
 };
 
 export default function WorkflowCategoryTabs({
@@ -51,8 +49,7 @@ export default function WorkflowCategoryTabs({
 }
 
 WorkflowCategoryTabs.propTypes = {
-  category: PropTypes.oneOf(["all", "mine", "shared-with-me", "i-shared"])
-    .isRequired,
+  category: PropTypes.oneOf(["mine", "shared-with-me"]).isRequired,
   setCategory: PropTypes.func.isRequired,
   refreshedAt: PropTypes.string.isRequired,
   refresh: PropTypes.func.isRequired,
