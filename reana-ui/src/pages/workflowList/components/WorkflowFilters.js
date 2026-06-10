@@ -21,9 +21,14 @@ import WorkflowStatusFilter from "./WorkflowStatusFilter";
 import styles from "./WorkflowFilters.module.scss";
 
 const SHARING_OPTIONS = [
-  { value: "all", label: "All", icon: "list" },
-  { value: "nobody", label: "Not shared", icon: "lock" },
-  { value: "anybody", label: "Shared with others", icon: "share alternate" },
+  { value: "all", label: "All workflows", icon: "list" },
+  { value: "not-shared", label: "Not shared", icon: "lock" },
+  {
+    value: "shared-with-others",
+    label: "Shared with others",
+    icon: "share alternate",
+  },
+  { value: "shared-with-you", label: "Shared with you", icon: "eye" },
 ];
 
 const SESSION_OPTIONS = [
@@ -37,7 +42,8 @@ const DELETED_OPTIONS = [
 ];
 
 export default function WorkflowFilters({
-  category,
+  sharingScope,
+  setSharingScope,
   statusFilter,
   setStatusFilter,
   includeDeleted,
@@ -55,16 +61,12 @@ export default function WorkflowFilters({
   const usersYouSharedWith = useSelector(getUsersYouSharedWith, _.isEqual);
 
   useEffect(() => {
-    if (category === "shared-with-me") {
+    if (sharingScope === "shared-with-you") {
       dispatch(fetchUsersSharedWithYou());
-    } else if (
-      category === "mine" &&
-      sharedWithUser &&
-      sharedWithUser !== "nobody"
-    ) {
+    } else if (sharingScope === "shared-with-others") {
       dispatch(fetchUsersYouSharedWith());
     }
-  }, [dispatch, category, sharedWithUser]);
+  }, [dispatch, sharingScope]);
 
   const sharedByUserOptions = useMemo(
     () => [
@@ -104,61 +106,6 @@ export default function WorkflowFilters({
 
   return (
     <aside className={styles.sidebar}>
-      {category === "shared-with-me" && (
-        <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>Shared by</h3>
-          <Dropdown
-            fluid
-            selection
-            compact
-            search
-            scrolling
-            options={sharedByUserOptions}
-            value={sharedByUser || "anybody"}
-            onChange={(_, { value }) => setSharedByUser(value)}
-            className={styles.personDropdown}
-            aria-label="Filter by person who shared the workflow"
-          />
-        </section>
-      )}
-
-      {category === "mine" && (
-        <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>Sharing</h3>
-          <WorkflowRefinementMenu
-            ariaLabel="Filter your workflows by sharing"
-            options={SHARING_OPTIONS}
-            value={
-              sharedWithUser === "nobody"
-                ? "nobody"
-                : sharedWithUser
-                  ? "anybody"
-                  : "all"
-            }
-            onChange={(value) =>
-              setSharedWithUser(value === "all" ? undefined : value)
-            }
-          />
-          {sharedWithUser && sharedWithUser !== "nobody" && (
-            <div className={styles.contextualDropdown}>
-              <label className={styles.dropdownLabel}>Shared with</label>
-              <Dropdown
-                fluid
-                selection
-                compact
-                search
-                scrolling
-                options={sharedWithUserOptions}
-                value={sharedWithUser}
-                onChange={(_, { value }) => setSharedWithUser(value)}
-                className={styles.personDropdown}
-                aria-label="Filter by person the workflow was shared with"
-              />
-            </div>
-          )}
-        </section>
-      )}
-
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>Status</h3>
         <WorkflowStatusFilter
@@ -167,6 +114,50 @@ export default function WorkflowFilters({
           hasStatusFilter={hasStatusFilter}
           fluid
         />
+      </section>
+
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>Sharing</h3>
+        <WorkflowRefinementMenu
+          ariaLabel="Filter workflows by sharing"
+          options={SHARING_OPTIONS}
+          value={sharingScope}
+          onChange={setSharingScope}
+        />
+        {sharingScope === "shared-with-others" && (
+          <div className={styles.contextualDropdown}>
+            <label className={styles.dropdownLabel}>Shared with</label>
+            <Dropdown
+              fluid
+              selection
+              compact
+              search
+              scrolling
+              options={sharedWithUserOptions}
+              value={sharedWithUser || "anybody"}
+              onChange={(_, { value }) => setSharedWithUser(value)}
+              className={styles.personDropdown}
+              aria-label="Filter by person the workflow was shared with"
+            />
+          </div>
+        )}
+        {sharingScope === "shared-with-you" && (
+          <div className={styles.contextualDropdown}>
+            <label className={styles.dropdownLabel}>Shared by</label>
+            <Dropdown
+              fluid
+              selection
+              compact
+              search
+              scrolling
+              options={sharedByUserOptions}
+              value={sharedByUser || "anybody"}
+              onChange={(_, { value }) => setSharedByUser(value)}
+              className={styles.personDropdown}
+              aria-label="Filter by person who shared the workflow"
+            />
+          </div>
+        )}
       </section>
 
       <section className={styles.section}>
@@ -193,7 +184,13 @@ export default function WorkflowFilters({
 }
 
 WorkflowFilters.propTypes = {
-  category: PropTypes.oneOf(["mine", "shared-with-me"]).isRequired,
+  sharingScope: PropTypes.oneOf([
+    "all",
+    "not-shared",
+    "shared-with-others",
+    "shared-with-you",
+  ]).isRequired,
+  setSharingScope: PropTypes.func.isRequired,
   statusFilter: PropTypes.string,
   setStatusFilter: PropTypes.func.isRequired,
   includeDeleted: PropTypes.bool.isRequired,

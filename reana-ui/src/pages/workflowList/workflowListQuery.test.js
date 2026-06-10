@@ -14,42 +14,44 @@ import {
 } from "./workflowListQuery";
 
 test.each([
-  ["mine", { shared: false, sharedBy: undefined, sharedWith: undefined }],
+  ["all", { shared: true, sharedBy: undefined, sharedWith: undefined }],
+  ["not-shared", { shared: false, sharedBy: undefined, sharedWith: "nobody" }],
   [
-    "shared-with-me",
+    "shared-with-others",
+    { shared: false, sharedBy: undefined, sharedWith: "anybody" },
+  ],
+  [
+    "shared-with-you",
     { shared: false, sharedBy: "anybody", sharedWith: undefined },
   ],
-])("serializes the %s workflow scope", (category, expected) => {
+])("serializes the %s sharing scope", (sharingScope, expected) => {
   const params = serializeQueryToApiParams({
     ...parseWorkflowListQuery(new URLSearchParams()),
-    category,
+    sharingScope,
   });
 
   expect(params).toMatchObject(expected);
 });
 
 test.each([
-  [undefined, undefined],
-  ["nobody", "nobody"],
-  ["anybody", "anybody"],
-  ["alice@example.org", "alice@example.org"],
-])("serializes the owned workflow sharing refinement %s", (value, expected) => {
-  const params = serializeQueryToApiParams({
-    ...parseWorkflowListQuery(new URLSearchParams()),
-    sharedWithUser: value,
-  });
+  ["shared-with-others", "shared-with-user", "alice@example.org", "sharedWith"],
+  ["shared-with-you", "shared-by", "alice@example.org", "sharedBy"],
+])(
+  "serializes the contextual person filter for %s",
+  (sharingScope, key, email, apiKey) => {
+    const query = parseWorkflowListQuery(
+      new URLSearchParams({ sharing: sharingScope, [key]: email }),
+    );
+    const params = serializeQueryToApiParams(query);
 
-  expect(params).toMatchObject({
-    shared: false,
-    sharedBy: undefined,
-    sharedWith: expected,
-  });
-});
+    expect(params[apiKey]).toBe(email);
+  },
+);
 
 test("parses all supported workflow-list filters from the URL", () => {
   const query = parseWorkflowListQuery(
     new URLSearchParams({
-      category: "shared-with-me",
+      sharing: "shared-with-you",
       "shared-by": "alice@example.org",
       page: "3",
       "page-size": "20",
@@ -62,7 +64,7 @@ test("parses all supported workflow-list filters from the URL", () => {
   );
 
   expect(query).toMatchObject({
-    category: "shared-with-me",
+    sharingScope: "shared-with-you",
     sharedByUser: "alice@example.org",
     page: 3,
     pageSize: 20,
@@ -90,37 +92,27 @@ test("show deleted adds deleted runs to the selected status", () => {
   expect(params.type).toBe("interactive");
 });
 
-test("default view excludes deleted runs", () => {
+test("default view includes all sharing states and excludes deleted runs", () => {
   const params = serializeQueryToApiParams(
     parseWorkflowListQuery(new URLSearchParams()),
   );
 
+  expect(params.shared).toBe(true);
   expect(params.status).not.toContain("deleted");
 });
 
 test.each([
-  [{ shared: "true" }, "shared-with-me"],
-  [{ "shared-with": "true" }, "mine"],
-  [{ "shared-by": "alice@example.org" }, "shared-with-me"],
-])("preserves legacy sharing URLs", (params, expectedCategory) => {
-  expect(parseWorkflowListQuery(new URLSearchParams(params)).category).toBe(
-    expectedCategory,
+  [{}, "all"],
+  [{ category: "all" }, "all"],
+  [{ category: "mine" }, "all"],
+  [{ shared: "true" }, "all"],
+  [{ category: "i-shared" }, "shared-with-others"],
+  [{ "shared-with": "true" }, "shared-with-others"],
+  [{ "shared-with-user": "alice@example.org" }, "shared-with-others"],
+  [{ category: "shared-with-me" }, "shared-with-you"],
+  [{ "shared-by": "alice@example.org" }, "shared-with-you"],
+])("maps legacy sharing URLs to %s", (params, expectedSharingScope) => {
+  expect(parseWorkflowListQuery(new URLSearchParams(params)).sharingScope).toBe(
+    expectedSharingScope,
   );
 });
-
-test.each([
-  [{}, undefined],
-  [{ category: "all" }, undefined],
-  [{ category: "all", shared: "true" }, undefined],
-  [{ category: "i-shared" }, "anybody"],
-  [{ category: "i-shared", "shared-by": "alice@example.org" }, "anybody"],
-  [{ "shared-with": "true" }, "anybody"],
-])(
-  "parses legacy owned workflow views into the sharing refinement",
-  (params, expectedSharedWithUser) => {
-    const query = parseWorkflowListQuery(new URLSearchParams(params));
-
-    expect(query.category).toBe("mine");
-    expect(query.sharedWithUser).toBe(expectedSharedWithUser);
-  },
-);

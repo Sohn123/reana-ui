@@ -20,7 +20,8 @@ jest.mock("react-redux", () => ({
 }));
 
 const defaultProps = {
-  category: "mine",
+  sharingScope: "all",
+  setSharingScope: jest.fn(),
   statusFilter: undefined,
   setStatusFilter: jest.fn(),
   includeDeleted: false,
@@ -46,36 +47,50 @@ beforeEach(() => {
   });
 });
 
-test("shows outgoing sharing refinements only for your workflows", () => {
+test("shows status before the sharing scope choices", () => {
   render(<WorkflowFilters {...defaultProps} />);
 
-  expect(
-    screen.getByLabelText("Filter your workflows by sharing"),
-  ).toBeVisible();
+  const headings = screen
+    .getAllByRole("heading")
+    .map(({ textContent }) => textContent);
+
+  expect(headings.slice(0, 2)).toEqual(["Status", "Sharing"]);
+  expect(screen.getByLabelText("Filter workflows by sharing")).toBeVisible();
   expect(
     screen.queryByLabelText("Filter by person the workflow was shared with"),
   ).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByText("Shared with others"));
 
-  expect(defaultProps.setSharedWithUser).toHaveBeenCalledWith("anybody");
+  expect(defaultProps.setSharingScope).toHaveBeenCalledWith(
+    "shared-with-others",
+  );
 });
 
 test("shows the recipient selector for workflows shared with others", () => {
-  render(<WorkflowFilters {...defaultProps} sharedWithUser="anybody" />);
+  render(
+    <WorkflowFilters
+      {...defaultProps}
+      sharingScope="shared-with-others"
+      sharedWithUser="anybody"
+    />,
+  );
 
   expect(
     screen.getByLabelText("Filter by person the workflow was shared with"),
   ).toBeVisible();
+  expect(
+    screen.queryByLabelText("Filter by person who shared the workflow"),
+  ).not.toBeInTheDocument();
 });
 
-test("shows the owner selector only for workflows shared with you", () => {
-  render(<WorkflowFilters {...defaultProps} category="shared-with-me" />);
+test("shows the owner selector for workflows shared with you", () => {
+  render(<WorkflowFilters {...defaultProps} sharingScope="shared-with-you" />);
 
   expect(
     screen.getByLabelText("Filter by person who shared the workflow"),
   ).toBeVisible();
   expect(
-    screen.queryByLabelText("Filter your workflows by sharing"),
+    screen.queryByLabelText("Filter by person the workflow was shared with"),
   ).not.toBeInTheDocument();
 });

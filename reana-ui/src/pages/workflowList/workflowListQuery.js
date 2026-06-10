@@ -21,8 +21,13 @@ export const WORKFLOW_LIST_PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100].map(
 export const WORKFLOW_LIST_DEFAULT_PAGE_SIZE =
   WORKFLOW_LIST_PAGE_SIZE_OPTIONS[1].value;
 
-export const WORKFLOW_LIST_CATEGORIES = ["mine", "shared-with-me"];
-export const WORKFLOW_LIST_DEFAULT_CATEGORY = "mine";
+export const WORKFLOW_LIST_SHARING_SCOPES = [
+  "all",
+  "not-shared",
+  "shared-with-others",
+  "shared-with-you",
+];
+export const WORKFLOW_LIST_DEFAULT_SHARING_SCOPE = "all";
 
 const isPositiveInteger = (value) => Number.isFinite(value) && value > 0;
 const isValidStatus = (status) =>
@@ -32,7 +37,8 @@ const isValidStatus = (status) =>
  * Normalized workflow list query state parsed from URL search parameters.
  *
  * URL Parameter Contract:
- * - category: "mine" | "shared-with-me" or absent (default: "mine")
+ * - sharing: "not-shared" | "shared-with-others" | "shared-with-you"
+ *   or absent (default: "all")
  * - page: positive integer or absent (default: 1)
  * - page-size: positive integer or absent (default: 10)
  * - search: string or absent
@@ -41,11 +47,11 @@ const isValidStatus = (status) =>
  * - show-deleted: "true" to include deleted runs or absent
  * - open-sessions: "true" or absent
  *
- * Shared-with-me category only:
+ * Shared-with-you scope only:
  * - shared-by: user email or absent (default: anybody)
  *
- * Mine category only:
- * - shared-with-user: "nobody" | "anybody" | user email or absent (default: all)
+ * Shared-with-others scope only:
+ * - shared-with-user: user email or absent (default: anybody)
  *
  */
 export function parseWorkflowListQuery(searchParams) {
@@ -60,20 +66,25 @@ export function parseWorkflowListQuery(searchParams) {
   const search = searchParams.get("search") || "";
   const sort = searchParams.get("sort") || "desc";
 
-  // Determine category. Explicit ?category= takes priority
+  // Determine sharing scope, including legacy sharing/category URLs.
+  const rawSharingScope = searchParams.get("sharing");
   const rawCategory = searchParams.get("category");
-  let category;
-  if (rawCategory === "all" || rawCategory === "i-shared") {
-    category = "mine";
-  } else if (WORKFLOW_LIST_CATEGORIES.includes(rawCategory)) {
-    category = rawCategory;
+  let sharingScope;
+  if (WORKFLOW_LIST_SHARING_SCOPES.includes(rawSharingScope)) {
+    sharingScope = rawSharingScope;
   } else if (
-    searchParams.get("shared") === "true" ||
-    searchParams.get("shared-by")
+    searchParams.get("shared-by") ||
+    rawCategory === "shared-with-me"
   ) {
-    category = "shared-with-me";
+    sharingScope = "shared-with-you";
+  } else if (
+    searchParams.get("shared-with-user") ||
+    searchParams.get("shared-with") === "true" ||
+    rawCategory === "i-shared"
+  ) {
+    sharingScope = "shared-with-others";
   } else {
-    category = WORKFLOW_LIST_DEFAULT_CATEGORY;
+    sharingScope = WORKFLOW_LIST_DEFAULT_SHARING_SCOPE;
   }
 
   const includeDeleted = searchParams.get("show-deleted") === "true";
@@ -83,20 +94,16 @@ export function parseWorkflowListQuery(searchParams) {
   const hasStatusFilter =
     searchParams.has("status") && isValidStatus(rawStatus);
 
-  // User filter for "shared with me" category (who shared with me)
+  // Person who shared the workflow with the current user.
   const sharedByUser =
-    category === "shared-with-me"
+    sharingScope === "shared-with-you"
       ? searchParams.get("shared-by") || "anybody"
       : undefined;
 
-  // Sharing refinement for owned workflows
+  // Person the current user shared the workflow with.
   const sharedWithUser =
-    category === "mine"
-      ? searchParams.get("shared-with-user") ||
-        (rawCategory === "i-shared" ||
-        searchParams.get("shared-with") === "true"
-          ? "anybody"
-          : undefined)
+    sharingScope === "shared-with-others"
+      ? searchParams.get("shared-with-user") || "anybody"
       : undefined;
 
   return {
@@ -104,7 +111,7 @@ export function parseWorkflowListQuery(searchParams) {
     pageSize,
     search,
     sort,
-    category,
+    sharingScope,
     includeDeleted,
     showOpenSessionsOnly,
     status,
@@ -116,21 +123,28 @@ export function parseWorkflowListQuery(searchParams) {
 
 /**
  * Serializes the normalized query model to API request parameters.
- * The active category drives which shared/sharedBy/sharedWith API params are sent.
+ * The active sharing scope drives which shared/sharedBy/sharedWith API params are sent.
  */
 export function serializeQueryToApiParams(query) {
   let shared, sharedBy, sharedWith;
 
-  if (query.category === "shared-with-me") {
-    // shared_by="anybody" returns ONLY workflows others shared with me (not the union).
+  if (query.sharingScope === "not-shared") {
+    shared = false;
+    sharedBy = undefined;
+    sharedWith = "nobody";
+  } else if (query.sharingScope === "shared-with-others") {
+    shared = false;
+    sharedBy = undefined;
+    sharedWith = query.sharedWithUser || "anybody";
+  } else if (query.sharingScope === "shared-with-you") {
     shared = false;
     sharedBy = query.sharedByUser || "anybody";
     sharedWith = undefined;
   } else {
-    // Owned workflows, optionally refined by who they are shared with.
-    shared = false;
+    // Union of owned workflows and workflows shared with the current user.
+    shared = true;
     sharedBy = undefined;
-    sharedWith = query.sharedWithUser;
+    sharedWith = undefined;
   }
 
   let status;

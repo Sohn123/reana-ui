@@ -11,7 +11,7 @@
 import moment from "moment";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Container, Dimmer, Dropdown, Loader } from "semantic-ui-react";
+import { Container, Dimmer, Dropdown, Icon, Loader } from "semantic-ui-react";
 
 import { fetchUsersSharedWithYou, fetchWorkflows } from "~/actions";
 import {
@@ -28,7 +28,6 @@ import {
 import { Pagination, Search } from "~/components";
 import BasePage from "../BasePage";
 import Welcome from "./components/Welcome";
-import WorkflowCategoryTabs from "./components/WorkflowCategoryTabs";
 import WorkflowFilters from "./components/WorkflowFilters";
 import WorkflowList from "./components/WorkflowList";
 import WorkflowSorting from "./components/WorkflowSorting";
@@ -71,7 +70,7 @@ function Workflows() {
     setIncludeDeleted,
     setSort,
     setShowOpenSessionsOnly,
-    setCategory,
+    setSharingScope,
     setSharedByUser,
     setSharedWithUser,
   } = useWorkflowListQuery();
@@ -83,7 +82,7 @@ function Workflows() {
     includeDeleted,
     sort,
     showOpenSessionsOnly,
-    category,
+    sharingScope,
     sharedByUser,
     sharedWithUser,
   } = query;
@@ -145,15 +144,10 @@ function Workflows() {
   return (
     <div className={styles.container}>
       <Container text className={styles["workflow-list-container"]}>
-        <WorkflowCategoryTabs
-          category={category}
-          setCategory={setCategory}
-          refreshedAt={refreshedAt}
-          refresh={() => window.location.reload()}
-        />
         <div className={styles.browser}>
           <WorkflowFilters
-            category={category}
+            sharingScope={sharingScope}
+            setSharingScope={setSharingScope}
             statusFilter={status}
             setStatusFilter={setStatus}
             includeDeleted={includeDeleted}
@@ -181,9 +175,19 @@ function Workflows() {
                   <WorkflowSorting value={sort} sort={setSort} />
                 </div>
               </div>
-              <div className={styles.resultSummary}>
-                {workflowsCount}{" "}
-                {workflowsCount === 1 ? "workflow" : "workflows"}
+              <div className={styles.resultsMeta}>
+                <div className={styles.resultSummary}>
+                  {workflowsCount}{" "}
+                  {workflowsCount === 1 ? "workflow" : "workflows"}
+                </div>
+                <button
+                  className={styles.refresh}
+                  type="button"
+                  onClick={() => window.location.reload()}
+                >
+                  <Icon name="refresh" />
+                  Refreshed at {refreshedAt}
+                </button>
               </div>
             </div>
             <WorkflowList workflows={workflowArray} loading={loading} />

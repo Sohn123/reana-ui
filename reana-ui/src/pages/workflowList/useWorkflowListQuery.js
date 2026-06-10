@@ -14,8 +14,8 @@ import { useSearchParams } from "react-router-dom";
 import {
   serializeQueryToApiParams,
   WORKFLOW_LIST_DEFAULT_PAGE_SIZE,
-  WORKFLOW_LIST_CATEGORIES,
-  WORKFLOW_LIST_DEFAULT_CATEGORY,
+  WORKFLOW_LIST_DEFAULT_SHARING_SCOPE,
+  WORKFLOW_LIST_SHARING_SCOPES,
   parseWorkflowListQuery,
 } from "./workflowListQuery";
 
@@ -69,26 +69,36 @@ export function useWorkflowListQuery() {
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
-    const rawCategory = searchParams.get("category");
-    const isLegacyOwnedSharingView =
-      rawCategory === "i-shared" || searchParams.get("shared-with") === "true";
-    const shouldNormalizeCategory =
-      rawCategory === "all" ||
-      rawCategory === "i-shared" ||
+    const hasLegacySharingParams =
+      searchParams.has("category") ||
+      searchParams.has("shared") ||
       searchParams.has("shared-with");
+    const parsed = parseWorkflowListQuery(searchParams);
+    const shouldNormalizeSharing =
+      hasLegacySharingParams ||
+      (searchParams.has("sharing") &&
+        !WORKFLOW_LIST_SHARING_SCOPES.includes(searchParams.get("sharing")));
 
-    if (shouldNormalizeCategory) {
+    if (shouldNormalizeSharing) {
       updateParams(
         setSearchParams,
         (next) => {
           next.delete("category");
           next.delete("shared-with");
           next.delete("shared");
-          next.delete("shared-by");
-          if (isLegacyOwnedSharingView && !next.has("shared-with-user")) {
-            next.set("shared-with-user", "anybody");
+
+          if (parsed.sharingScope === WORKFLOW_LIST_DEFAULT_SHARING_SCOPE) {
+            next.delete("sharing");
+          } else {
+            next.set("sharing", parsed.sharingScope);
           }
-          resetPage(next);
+
+          if (parsed.sharingScope !== "shared-with-you") {
+            next.delete("shared-by");
+          }
+          if (parsed.sharingScope !== "shared-with-others") {
+            next.delete("shared-with-user");
+          }
         },
         { replace: true },
       );
@@ -190,20 +200,21 @@ export function useWorkflowListQuery() {
     [setSearchParams],
   );
 
-  const setCategory = useCallback(
-    (nextCategory) => {
+  const setSharingScope = useCallback(
+    (nextSharingScope) => {
       updateParams(setSearchParams, (next) => {
         if (
-          !WORKFLOW_LIST_CATEGORIES.includes(nextCategory) ||
-          nextCategory === WORKFLOW_LIST_DEFAULT_CATEGORY
+          !WORKFLOW_LIST_SHARING_SCOPES.includes(nextSharingScope) ||
+          nextSharingScope === WORKFLOW_LIST_DEFAULT_SHARING_SCOPE
         ) {
-          next.delete("category");
+          next.delete("sharing");
         } else {
-          next.set("category", nextCategory);
+          next.set("sharing", nextSharingScope);
         }
-        // Clear all sharing user filters when switching categories
+        // Person filters are contextual to one sharing scope.
         next.delete("shared-by");
         next.delete("shared-with-user");
+        next.delete("category"); // legacy
         next.delete("shared"); // legacy
         next.delete("shared-with"); // legacy
         resetPage(next);
@@ -257,7 +268,7 @@ export function useWorkflowListQuery() {
     setIncludeDeleted,
     setSort,
     setShowOpenSessionsOnly,
-    setCategory,
+    setSharingScope,
     setSharedByUser,
     setSharedWithUser,
   };

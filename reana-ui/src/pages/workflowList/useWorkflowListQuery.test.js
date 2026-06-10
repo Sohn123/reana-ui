@@ -14,30 +14,54 @@ import { MemoryRouter } from "react-router-dom";
 import { useWorkflowListQuery } from "./useWorkflowListQuery";
 
 const wrapper = ({ children }) => <MemoryRouter>{children}</MemoryRouter>;
+const wrapperWithEntry = (entry) =>
+  function Wrapper({ children }) {
+    return <MemoryRouter initialEntries={[entry]}>{children}</MemoryRouter>;
+  };
 
-test("keeps anybody as the shared-with-others refinement", async () => {
+test("selects a sharing scope and serializes its API parameters", async () => {
   const { result } = renderHook(() => useWorkflowListQuery(), { wrapper });
 
-  act(() => result.current.setSharedWithUser("anybody"));
+  act(() => result.current.setSharingScope("shared-with-others"));
 
   await waitFor(() => {
-    expect(result.current.query.sharedWithUser).toBe("anybody");
+    expect(result.current.query.sharingScope).toBe("shared-with-others");
   });
   expect(result.current.requestParams.sharedWith).toBe("anybody");
 });
 
-test("clears the owned workflow sharing refinement", async () => {
+test("changing sharing scope clears incompatible person filters", async () => {
   const { result } = renderHook(() => useWorkflowListQuery(), { wrapper });
 
-  act(() => result.current.setSharedWithUser("nobody"));
+  act(() => result.current.setSharingScope("shared-with-you"));
+  act(() => result.current.setSharedByUser("alice@example.org"));
   await waitFor(() => {
-    expect(result.current.query.sharedWithUser).toBe("nobody");
+    expect(result.current.query.sharedByUser).toBe("alice@example.org");
   });
 
-  act(() => result.current.setSharedWithUser(undefined));
+  act(() => result.current.setSharingScope("shared-with-others"));
 
   await waitFor(() => {
-    expect(result.current.query.sharedWithUser).toBeUndefined();
+    expect(result.current.query.sharingScope).toBe("shared-with-others");
+    expect(result.current.query.sharedByUser).toBeUndefined();
+    expect(result.current.query.sharedWithUser).toBe("anybody");
   });
-  expect(result.current.requestParams.sharedWith).toBeUndefined();
+});
+
+test("normalizes a legacy view while preserving unrelated filters", async () => {
+  const { result } = renderHook(() => useWorkflowListQuery(), {
+    wrapper: wrapperWithEntry(
+      "/?category=i-shared&page=3&status=running&search=analysis",
+    ),
+  });
+
+  await waitFor(() => {
+    expect(result.current.query.sharingScope).toBe("shared-with-others");
+  });
+  expect(result.current.query).toMatchObject({
+    page: 3,
+    search: "analysis",
+    status: "running",
+    sharedWithUser: "anybody",
+  });
 });

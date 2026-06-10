@@ -11,8 +11,6 @@
 @import "@palette";
 
 .container {
-  --workflow-view-header-height: 3.5rem;
-
   flex-grow: 1;
   display: flex;
   flex-direction: column;
@@ -34,7 +32,6 @@
   grid-template-columns: 230px minmax(0, 1fr);
   align-items: start;
   gap: 2em;
-  margin-top: 1.5em;
 }
 
 .results {
@@ -44,21 +41,11 @@
 .resultsHeader {
   position: sticky;
   z-index: 2;
-  top: calc(var(--workflow-view-header-height) + 1.5em);
+  top: 0;
   margin-bottom: 0.5em;
   padding-bottom: 0.5em;
   border-bottom: 1px solid $sepia;
   background-color: white;
-
-  &::before {
-    position: absolute;
-    right: 0;
-    bottom: 100%;
-    left: 0;
-    height: 1.5em;
-    background-color: white;
-    content: "";
-  }
 }
 
 .resultsHeaderControls {
@@ -81,11 +68,34 @@
   flex: 0 0 auto;
 }
 
-.resultSummary {
+.resultsMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
   margin-top: 0.5em;
+}
+
+.resultSummary {
   color: $raven;
   font-size: 0.9em;
   white-space: nowrap;
+}
+
+.refresh {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: $gray;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    color: $dark-gray;
+  }
 }
 
 @media only screen and (max-width: 991px) {
@@ -96,18 +106,6 @@
 }
 
 @media only screen and (max-width: 767px) {
-  .container {
-    --workflow-view-header-height: 4.75rem;
-  }
-
-  .resultsHeader {
-    top: var(--workflow-view-header-height);
-
-    &::before {
-      display: none;
-    }
-  }
-
   .resultsHeaderControls {
     align-items: stretch;
     flex-direction: column;
@@ -119,6 +117,12 @@
 
   .resultControls {
     justify-content: space-between;
+  }
+
+  .resultsMeta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.35em;
   }
 }
 
