@@ -10,9 +10,9 @@
 
 import _ from "lodash";
 import PropTypes from "prop-types";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Dropdown } from "semantic-ui-react";
+import { Dropdown, Icon } from "semantic-ui-react";
 
 import { fetchUsersSharedWithYou, fetchUsersYouSharedWith } from "~/actions";
 import { getUsersSharedWithYou, getUsersYouSharedWith } from "~/selectors";
@@ -55,6 +55,40 @@ const DELETED_OPTIONS = [
     icon: "eye",
   },
 ];
+
+function FilterSection({
+  title,
+  active = false,
+  defaultOpen = true,
+  children,
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionTitle}>
+        <button
+          type="button"
+          className={styles.sectionToggle}
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
+          {title}
+          {!open && active && <span className={styles.activeDot} />}
+          <Icon name={open ? "chevron down" : "chevron right"} />
+        </button>
+      </h3>
+      {open && <div className={styles.sectionContent}>{children}</div>}
+    </section>
+  );
+}
+
+FilterSection.propTypes = {
+  title: PropTypes.string.isRequired,
+  active: PropTypes.bool,
+  defaultOpen: PropTypes.bool,
+  children: PropTypes.node.isRequired,
+};
 
 export default function WorkflowFilters({
   sharingScope,
@@ -121,18 +155,16 @@ export default function WorkflowFilters({
 
   return (
     <aside className={styles.sidebar}>
-      <section className={styles.section}>
-        <h3 className={styles.sectionTitle}>Status</h3>
+      <FilterSection title="Status" active={hasStatusFilter}>
         <WorkflowStatusFilter
           statusFilter={statusFilter}
           filter={setStatusFilter}
           hasStatusFilter={hasStatusFilter}
           fluid
         />
-      </section>
+      </FilterSection>
 
-      <section className={styles.section}>
-        <h3 className={styles.sectionTitle}>Sharing</h3>
+      <FilterSection title="Sharing" active={sharingScope !== "all"}>
         <WorkflowRefinementMenu
           ariaLabel="Filter workflows by sharing"
           options={SHARING_OPTIONS}
@@ -173,29 +205,34 @@ export default function WorkflowFilters({
             />
           </div>
         )}
-      </section>
+      </FilterSection>
 
-      <section className={styles.section}>
-        <h3 className={styles.sectionTitle}>Sessions</h3>
-        <WorkflowRefinementMenu
-          ariaLabel="Filter by session availability"
-          horizontal
-          options={SESSION_OPTIONS}
-          value={showOpenSessionsOnly ? "open" : "all"}
-          onChange={(value) => setShowOpenSessionsOnly(value === "open")}
-        />
-      </section>
-
-      <section className={styles.section}>
-        <h3 className={styles.sectionTitle}>Deleted runs</h3>
-        <WorkflowRefinementMenu
-          ariaLabel="Choose deleted run visibility"
-          horizontal
-          options={DELETED_OPTIONS}
-          value={includeDeleted ? "included" : "hidden"}
-          onChange={(value) => setIncludeDeleted(value === "included")}
-        />
-      </section>
+      <FilterSection
+        title="Display"
+        active={showOpenSessionsOnly || includeDeleted}
+        defaultOpen={showOpenSessionsOnly || includeDeleted}
+      >
+        <div className={styles.displayRow}>
+          <span className={styles.displayLabel}>Sessions</span>
+          <WorkflowRefinementMenu
+            ariaLabel="Filter by session availability"
+            horizontal
+            options={SESSION_OPTIONS}
+            value={showOpenSessionsOnly ? "open" : "all"}
+            onChange={(value) => setShowOpenSessionsOnly(value === "open")}
+          />
+        </div>
+        <div className={styles.displayRow}>
+          <span className={styles.displayLabel}>Deleted runs</span>
+          <WorkflowRefinementMenu
+            ariaLabel="Choose deleted run visibility"
+            horizontal
+            options={DELETED_OPTIONS}
+            value={includeDeleted ? "included" : "hidden"}
+            onChange={(value) => setIncludeDeleted(value === "included")}
+          />
+        </div>
+      </FilterSection>
     </aside>
   );
 }
