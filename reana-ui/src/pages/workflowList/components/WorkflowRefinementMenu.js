@@ -15,6 +15,7 @@ import styles from "./WorkflowRefinementMenu.module.scss";
 
 export default function WorkflowRefinementMenu({
   ariaLabel,
+  horizontal = false,
   options,
   value,
   onChange,
@@ -22,9 +23,11 @@ export default function WorkflowRefinementMenu({
   return (
     <Menu
       secondary
-      vertical
+      vertical={!horizontal}
       fluid
-      className={styles.refinementMenu}
+      className={`${styles.refinementMenu} ${
+        horizontal ? styles.horizontal : ""
+      }`}
       aria-label={ariaLabel}
     >
       {options.map((option) => (
@@ -33,9 +36,13 @@ export default function WorkflowRefinementMenu({
           name={option.value}
           active={value === option.value}
           onClick={() => onChange(option.value)}
+          aria-label={option.label}
+          title={horizontal ? option.label : undefined}
         >
           <Icon name={option.icon} />
-          <span>{option.label}</span>
+          <span>
+            {horizontal ? option.compactLabel || option.label : option.label}
+          </span>
         </Menu.Item>
       ))}
     </Menu>
@@ -44,10 +51,12 @@ export default function WorkflowRefinementMenu({
 
 WorkflowRefinementMenu.propTypes = {
   ariaLabel: PropTypes.string.isRequired,
+  horizontal: PropTypes.bool,
   options: PropTypes.arrayOf(
     PropTypes.shape({
       icon: PropTypes.string.isRequired,
       label: PropTypes.string.isRequired,
+      compactLabel: PropTypes.string,
       value: PropTypes.string.isRequired,
     }),
   ).isRequired,

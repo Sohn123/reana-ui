@@ -10,7 +10,7 @@
 
 @import "@palette";
 
-:global(.ui.secondary.vertical.menu).refinementMenu {
+:global(.ui.secondary.menu).refinementMenu {
   width: 100%;
   margin: 0;
 
@@ -37,5 +37,42 @@
     background-color: rgba($dark-blue, 0.1) !important;
     color: $dark-blue !important;
     font-weight: 600;
+  }
+}
+
+:global(.ui.secondary.menu).horizontal {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25em;
+  padding: 0.2em;
+  border: 1px solid $sepia;
+  border-radius: 0.45em;
+  background-color: rgba($dark-blue, 0.035);
+
+  :global(.item) {
+    justify-content: center;
+    min-width: 0;
+    margin: 0;
+    padding: 0.55em 0.4em !important;
+    text-align: center;
+
+    :global(.icon) {
+      flex: 0 0 auto;
+      width: auto;
+      margin-right: 0.4em !important;
+    }
+
+    span {
+      min-width: 0;
+      overflow: hidden;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  :global(.active.item) {
+    background-color: white !important;
+    box-shadow: 0 1px 3px rgba($dark-blue, 0.12) !important;
   }
 }

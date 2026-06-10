@@ -36,3 +36,36 @@ test("shows the selected refinement and handles selection", () => {
 
   expect(onChange).toHaveBeenCalledWith("shared");
 });
+
+test("supports a horizontal segmented layout", () => {
+  render(
+    <WorkflowRefinementMenu
+      ariaLabel="Filter sessions"
+      horizontal
+      options={[
+        {
+          value: "all",
+          label: "All workflows",
+          compactLabel: "All",
+          icon: "list",
+        },
+        {
+          value: "open",
+          label: "Open sessions only",
+          compactLabel: "Open only",
+          icon: "desktop",
+        },
+      ]}
+      value="all"
+      onChange={jest.fn()}
+    />,
+  );
+
+  expect(screen.getByLabelText("Filter sessions")).toHaveClass("horizontal");
+  expect(screen.getByText("All")).toBeVisible();
+  expect(screen.getByText("Open only")).toBeVisible();
+  expect(screen.getByLabelText("Open sessions only")).toHaveAttribute(
+    "title",
+    "Open sessions only",
+  );
+});

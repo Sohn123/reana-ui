@@ -32,13 +32,28 @@ const SHARING_OPTIONS = [
 ];
 
 const SESSION_OPTIONS = [
-  { value: "all", label: "All workflows", icon: "list" },
-  { value: "open", label: "Open sessions only", icon: "desktop" },
+  { value: "all", label: "All workflows", compactLabel: "All", icon: "list" },
+  {
+    value: "open",
+    label: "Open sessions only",
+    compactLabel: "Open only",
+    icon: "desktop",
+  },
 ];
 
 const DELETED_OPTIONS = [
-  { value: "hidden", label: "Hide deleted runs", icon: "eye slash" },
-  { value: "included", label: "Include deleted runs", icon: "eye" },
+  {
+    value: "hidden",
+    label: "Hide deleted runs",
+    compactLabel: "Hidden",
+    icon: "eye slash",
+  },
+  {
+    value: "included",
+    label: "Include deleted runs",
+    compactLabel: "Included",
+    icon: "eye",
+  },
 ];
 
 export default function WorkflowFilters({
@@ -164,6 +179,7 @@ export default function WorkflowFilters({
         <h3 className={styles.sectionTitle}>Sessions</h3>
         <WorkflowRefinementMenu
           ariaLabel="Filter by session availability"
+          horizontal
           options={SESSION_OPTIONS}
           value={showOpenSessionsOnly ? "open" : "all"}
           onChange={(value) => setShowOpenSessionsOnly(value === "open")}
@@ -174,6 +190,7 @@ export default function WorkflowFilters({
         <h3 className={styles.sectionTitle}>Deleted runs</h3>
         <WorkflowRefinementMenu
           ariaLabel="Choose deleted run visibility"
+          horizontal
           options={DELETED_OPTIONS}
           value={includeDeleted ? "included" : "hidden"}
           onChange={(value) => setIncludeDeleted(value === "included")}
