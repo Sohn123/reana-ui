@@ -16,18 +16,6 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding-top: 2.5em;
-}
-
-.title {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 1.25em;
-}
-
-:global(.ui.pagination.menu).pagination {
-  margin: 2em;
 }
 
 :global(.ui.text.container).workflow-list-container {
@@ -42,29 +30,23 @@
 }
 
 .results {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  min-height: 100vh;
 }
 
 .resultsHeader {
   position: sticky;
   z-index: 2;
-  top: 1.5em;
+  top: 0;
   display: flex;
   align-items: center;
   gap: 1em;
+  padding-top: 1.5em;
   padding-bottom: 0.5em;
   border-bottom: 1px solid $sepia;
   background-color: white;
-
-  &::before {
-    position: absolute;
-    right: 0;
-    bottom: 100%;
-    left: 0;
-    height: 1.5em;
-    background-color: white;
-    content: "";
-  }
 }
 
 .search {
@@ -79,12 +61,6 @@
   flex: 0 0 auto;
 }
 
-.resultsMeta {
-  padding-top: 0.6em;
-  margin-bottom: 0.4em;
-  text-align: right;
-}
-
 .metaSeparator {
   color: $gray;
   font-size: 0.85em;
@@ -97,26 +73,14 @@
   white-space: nowrap;
 }
 
-.refresh {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: $gray;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 12px;
-  white-space: nowrap;
-
-  &:hover,
-  &:focus-visible {
-    color: $dark-gray;
-  }
-}
-
 @media only screen and (max-width: 991px) {
   .browser {
     grid-template-columns: 1fr;
     gap: 1.25em;
+  }
+
+  .results {
+    min-height: auto;
   }
 }
 
@@ -131,8 +95,17 @@
 }
 
 .paginationRow {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 0.75em;
+  padding-bottom: 1.5em;
+  border-top: 1px solid $sepia;
+  background-color: white;
 
   :global(.ui.secondary.pointing.menu) {
     border-color: $sepia;

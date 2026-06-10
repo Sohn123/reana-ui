@@ -8,10 +8,9 @@
   under the terms of the MIT License; see LICENSE file for more details.
 */
 
-import moment from "moment";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Container, Dimmer, Dropdown, Icon, Loader } from "semantic-ui-react";
+import { Container, Dimmer, Dropdown, Loader } from "semantic-ui-react";
 
 import { fetchUsersSharedWithYou, fetchWorkflows } from "~/actions";
 import {
@@ -25,7 +24,7 @@ import {
   getWorkflowRefresh,
   getUsersSharedWithYou,
 } from "~/selectors";
-import { Title, Pagination, Search } from "~/components";
+import { Pagination, Search } from "~/components";
 import BasePage from "../BasePage";
 import Welcome from "./components/Welcome";
 import WorkflowFilters from "./components/WorkflowFilters";
@@ -44,8 +43,6 @@ export default function WorkflowListPage() {
 }
 
 function Workflows() {
-  const currentUTCTime = () => moment.utc().format("HH:mm:ss [UTC]");
-  const [refreshedAt, setRefreshedAt] = useState(currentUTCTime());
   const dispatch = useDispatch();
   const config = useSelector(getConfig);
   const workflows = useSelector(getWorkflows);
@@ -111,7 +108,6 @@ function Workflows() {
     const id = setInterval(() => {
       const apiParams = latestParamsRef.current;
       dispatch(fetchWorkflows({ ...apiParams, showLoader: false }));
-      setRefreshedAt(currentUTCTime());
     }, pollingSecs * 1000);
     return () => clearInterval(id);
   }, [dispatch, reanaToken, pollingSecs, configLoaded]);
@@ -144,17 +140,6 @@ function Workflows() {
   return (
     <div className={styles.container}>
       <Container text className={styles["workflow-list-container"]}>
-        <Title className={styles.title}>
-          <span>Your workflows</span>
-          <button
-            className={styles.refresh}
-            type="button"
-            onClick={() => window.location.reload()}
-          >
-            <Icon name="refresh" />
-            Refreshed at {refreshedAt}
-          </button>
-        </Title>
         <div className={styles.browser}>
           <WorkflowFilters
             sharingScope={sharingScope}
@@ -217,29 +202,23 @@ function Workflows() {
                 )}
               </div>
             </div>
-            <div className={styles.resultsMeta}>
-              <span className={styles.resultSummary}>
-                {workflowsCount === 0 ? (
-                  "No workflows found"
-                ) : (
-                  <>
-                    Showing {(page - 1) * pageSize + 1}–
-                    {Math.min(page * pageSize, workflowsCount)} of{" "}
-                    {workflowsCount}{" "}
-                    {workflowsCount === 1 ? "workflow" : "workflows"}
-                  </>
-                )}
-              </span>
-            </div>
             <WorkflowList workflows={workflowArray} loading={loading} />
-            {!loading && workflowsCount > pageSize && (
+            {!loading && workflowsCount > 0 && (
               <div className={styles.paginationRow}>
-                <Pagination
-                  className={styles.pagination}
-                  activePage={page}
-                  totalPages={Math.ceil(workflowsCount / pageSize)}
-                  onPageChange={(_, { activePage }) => setPage(activePage)}
-                />
+                <span className={styles.resultSummary}>
+                  Showing {(page - 1) * pageSize + 1}–
+                  {Math.min(page * pageSize, workflowsCount)} of{" "}
+                  {workflowsCount}{" "}
+                  {workflowsCount === 1 ? "workflow" : "workflows"}
+                </span>
+                {workflowsCount > pageSize && (
+                  <Pagination
+                    className={styles.pagination}
+                    activePage={page}
+                    totalPages={Math.ceil(workflowsCount / pageSize)}
+                    onPageChange={(_, { activePage }) => setPage(activePage)}
+                  />
+                )}
               </div>
             )}
           </main>

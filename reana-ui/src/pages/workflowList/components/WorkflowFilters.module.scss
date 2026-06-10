@@ -13,6 +13,7 @@
 .sidebar {
   position: sticky;
   top: 1.5em;
+  margin-top: 1.5em;
   max-height: calc(100vh - 3em);
   overflow-y: auto;
   padding: 1.1em;
@@ -123,6 +124,8 @@
 @media only screen and (max-width: 991px) {
   .sidebar {
     position: static;
+    margin-top: 0;
+    max-height: none;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.5em;
