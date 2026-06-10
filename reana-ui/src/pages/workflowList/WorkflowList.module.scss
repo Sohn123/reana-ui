@@ -49,8 +49,9 @@
   position: sticky;
   z-index: 2;
   top: 1.5em;
-  margin-bottom: 0.5em;
-  padding-top: 0.5em;
+  display: flex;
+  align-items: center;
+  gap: 1em;
   padding-bottom: 0.5em;
   border-bottom: 1px solid $sepia;
   background-color: white;
@@ -66,32 +67,28 @@
   }
 }
 
-.resultsHeaderControls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1em;
-}
-
 .search {
-  flex: 0 1 520px;
-  width: 100%;
+  flex: 1;
   min-width: 14em;
 }
 
 .resultControls {
   display: flex;
   align-items: center;
-  gap: 1em;
+  gap: 0.75em;
   flex: 0 0 auto;
 }
 
 .resultsMeta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1em;
-  margin-top: 0.5em;
+  padding-top: 0.6em;
+  margin-bottom: 0.4em;
+  text-align: right;
+}
+
+.metaSeparator {
+  color: $gray;
+  font-size: 0.85em;
+  user-select: none;
 }
 
 .resultSummary {
@@ -124,29 +121,37 @@
 }
 
 @media only screen and (max-width: 767px) {
-  .resultsHeaderControls {
-    align-items: stretch;
-    flex-direction: column;
+  .resultsHeader {
+    flex-wrap: wrap;
   }
 
   .search {
-    max-width: none;
-  }
-
-  .resultControls {
-    justify-content: space-between;
-  }
-
-  .resultsMeta {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.35em;
+    flex: 0 0 100%;
   }
 }
 
 .paginationRow {
   display: flex;
   justify-content: center;
+
+  :global(.ui.secondary.pointing.menu) {
+    border-color: $sepia;
+  }
+
+  :global(.ui.secondary.pointing.menu .item) {
+    color: $raven;
+  }
+
+  :global(.ui.secondary.pointing.menu .item:hover) {
+    color: $dark-blue;
+    border-color: rgba($dark-blue, 0.3);
+  }
+
+  :global(.ui.secondary.pointing.menu .active.item) {
+    color: $dark-blue;
+    border-color: $dark-blue;
+    font-weight: 600;
+  }
 }
 
 .pageSize {

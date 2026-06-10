@@ -173,68 +173,77 @@ function Workflows() {
           />
           <main className={styles.results}>
             <div className={styles.resultsHeader}>
-              <div className={styles.resultsHeaderControls}>
-                <div className={styles.search}>
-                  <Search
-                    value={searchText}
-                    onChange={setSearchText}
-                    onSubmit={submitSearch}
-                    placeholder="Search by workflow name..."
-                  />
-                </div>
-                <div className={styles.resultControls}>
-                  <WorkflowSorting value={sort} sort={setSort} />
-                </div>
+              <div className={styles.search}>
+                <Search
+                  value={searchText}
+                  onChange={setSearchText}
+                  onSubmit={submitSearch}
+                  placeholder="Search by workflow name..."
+                />
               </div>
-              <div className={styles.resultsMeta}>
-                <div className={styles.resultSummary}>
-                  {workflowsCount}{" "}
-                  {workflowsCount === 1 ? "workflow" : "workflows"}
-                </div>
+              <div className={styles.resultControls}>
+                <WorkflowSorting value={sort} sort={setSort} />
                 {!loading && (
-                  <div className={styles.pageSize}>
-                    <span className={styles.pageSizeLabel}>
-                      Results per page:
-                    </span>
-                    <Dropdown
-                      inline
-                      options={
-                        WORKFLOW_LIST_PAGE_SIZE_OPTIONS.some(
-                          (o) => o.value === pageSize,
-                        )
-                          ? WORKFLOW_LIST_PAGE_SIZE_OPTIONS
-                          : [
-                              ...WORKFLOW_LIST_PAGE_SIZE_OPTIONS,
-                              {
-                                key: pageSize,
-                                text: String(pageSize),
-                                value: pageSize,
-                              },
-                            ].sort((a, b) => a.value - b.value)
-                      }
-                      value={pageSize}
-                      onChange={(_, { value }) => {
-                        const newSize = Number(value);
-                        setPageSize(newSize);
-                      }}
-                    />
-                  </div>
+                  <>
+                    <span className={styles.metaSeparator}>·</span>
+                    <div className={styles.pageSize}>
+                      <span className={styles.pageSizeLabel}>
+                        Results per page:
+                      </span>
+                      <Dropdown
+                        inline
+                        options={
+                          WORKFLOW_LIST_PAGE_SIZE_OPTIONS.some(
+                            (o) => o.value === pageSize,
+                          )
+                            ? WORKFLOW_LIST_PAGE_SIZE_OPTIONS
+                            : [
+                                ...WORKFLOW_LIST_PAGE_SIZE_OPTIONS,
+                                {
+                                  key: pageSize,
+                                  text: String(pageSize),
+                                  value: pageSize,
+                                },
+                              ].sort((a, b) => a.value - b.value)
+                        }
+                        value={pageSize}
+                        onChange={(_, { value }) => {
+                          const newSize = Number(value);
+                          setPageSize(newSize);
+                        }}
+                      />
+                    </div>
+                  </>
                 )}
               </div>
             </div>
+            <div className={styles.resultsMeta}>
+              <span className={styles.resultSummary}>
+                {workflowsCount === 0 ? (
+                  "No workflows found"
+                ) : (
+                  <>
+                    Showing {(page - 1) * pageSize + 1}–
+                    {Math.min(page * pageSize, workflowsCount)} of{" "}
+                    {workflowsCount}{" "}
+                    {workflowsCount === 1 ? "workflow" : "workflows"}
+                  </>
+                )}
+              </span>
+            </div>
             <WorkflowList workflows={workflowArray} loading={loading} />
+            {!loading && workflowsCount > pageSize && (
+              <div className={styles.paginationRow}>
+                <Pagination
+                  className={styles.pagination}
+                  activePage={page}
+                  totalPages={Math.ceil(workflowsCount / pageSize)}
+                  onPageChange={(_, { activePage }) => setPage(activePage)}
+                />
+              </div>
+            )}
           </main>
         </div>
-        {!loading && workflowsCount > pageSize && (
-          <div className={styles.paginationRow}>
-            <Pagination
-              className={styles.pagination}
-              activePage={page}
-              totalPages={Math.ceil(workflowsCount / pageSize)}
-              onPageChange={(_, { activePage }) => setPage(activePage)}
-            />
-          </div>
-        )}
       </Container>
     </div>
   );
