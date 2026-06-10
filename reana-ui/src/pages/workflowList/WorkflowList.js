@@ -25,7 +25,7 @@ import {
   getWorkflowRefresh,
   getUsersSharedWithYou,
 } from "~/selectors";
-import { Pagination, Search } from "~/components";
+import { Title, Pagination, Search } from "~/components";
 import BasePage from "../BasePage";
 import Welcome from "./components/Welcome";
 import WorkflowFilters from "./components/WorkflowFilters";
@@ -144,6 +144,17 @@ function Workflows() {
   return (
     <div className={styles.container}>
       <Container text className={styles["workflow-list-container"]}>
+        <Title className={styles.title}>
+          <span>Your workflows</span>
+          <button
+            className={styles.refresh}
+            type="button"
+            onClick={() => window.location.reload()}
+          >
+            <Icon name="refresh" />
+            Refreshed at {refreshedAt}
+          </button>
+        </Title>
         <div className={styles.browser}>
           <WorkflowFilters
             sharingScope={sharingScope}
@@ -180,65 +191,48 @@ function Workflows() {
                   {workflowsCount}{" "}
                   {workflowsCount === 1 ? "workflow" : "workflows"}
                 </div>
-                <button
-                  className={styles.refresh}
-                  type="button"
-                  onClick={() => window.location.reload()}
-                >
-                  <Icon name="refresh" />
-                  Refreshed at {refreshedAt}
-                </button>
+                {!loading && (
+                  <div className={styles.pageSize}>
+                    <span className={styles.pageSizeLabel}>
+                      Results per page:
+                    </span>
+                    <Dropdown
+                      inline
+                      options={
+                        WORKFLOW_LIST_PAGE_SIZE_OPTIONS.some(
+                          (o) => o.value === pageSize,
+                        )
+                          ? WORKFLOW_LIST_PAGE_SIZE_OPTIONS
+                          : [
+                              ...WORKFLOW_LIST_PAGE_SIZE_OPTIONS,
+                              {
+                                key: pageSize,
+                                text: String(pageSize),
+                                value: pageSize,
+                              },
+                            ].sort((a, b) => a.value - b.value)
+                      }
+                      value={pageSize}
+                      onChange={(_, { value }) => {
+                        const newSize = Number(value);
+                        setPageSize(newSize);
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
             <WorkflowList workflows={workflowArray} loading={loading} />
           </main>
         </div>
-        {!loading && (
+        {!loading && workflowsCount > pageSize && (
           <div className={styles.paginationRow}>
-            {/* To emulate size of page-size dropdown and ensure page buttons stay in middle of screen */}
-            <div className={styles.pageSizeNotVisible}>
-              <span className={styles.pageSizeLabel}>Results per page:</span>
-              <Dropdown
-                selection
-                compact
-                options={WORKFLOW_LIST_PAGE_SIZE_OPTIONS}
-                value={pageSize}
-              />
-            </div>
-            {workflowsCount > pageSize && (
-              <Pagination
-                className={styles.pagination}
-                activePage={page}
-                totalPages={Math.ceil(workflowsCount / pageSize)}
-                onPageChange={(_, { activePage }) => setPage(activePage)}
-              />
-            )}
-            <div className={styles.pageSize}>
-              <span className={styles.pageSizeLabel}>Results per page:</span>
-              <Dropdown
-                selection
-                compact
-                options={
-                  WORKFLOW_LIST_PAGE_SIZE_OPTIONS.some(
-                    (o) => o.value === pageSize,
-                  )
-                    ? WORKFLOW_LIST_PAGE_SIZE_OPTIONS
-                    : [
-                        ...WORKFLOW_LIST_PAGE_SIZE_OPTIONS,
-                        {
-                          key: pageSize,
-                          text: String(pageSize),
-                          value: pageSize,
-                        },
-                      ].sort((a, b) => a.value - b.value)
-                }
-                value={pageSize}
-                onChange={(_, { value }) => {
-                  const newSize = Number(value);
-                  setPageSize(newSize);
-                }}
-              />
-            </div>
+            <Pagination
+              className={styles.pagination}
+              activePage={page}
+              totalPages={Math.ceil(workflowsCount / pageSize)}
+              onPageChange={(_, { activePage }) => setPage(activePage)}
+            />
           </div>
         )}
       </Container>

@@ -19,6 +19,13 @@
   padding-top: 2.5em;
 }
 
+.title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1.25em;
+}
+
 :global(.ui.pagination.menu).pagination {
   margin: 2em;
 }
@@ -41,11 +48,22 @@
 .resultsHeader {
   position: sticky;
   z-index: 2;
-  top: 0;
+  top: 1.5em;
   margin-bottom: 0.5em;
+  padding-top: 0.5em;
   padding-bottom: 0.5em;
   border-bottom: 1px solid $sepia;
   background-color: white;
+
+  &::before {
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    left: 0;
+    height: 1.5em;
+    background-color: white;
+    content: "";
+  }
 }
 
 .resultsHeaderControls {
@@ -127,41 +145,41 @@
 }
 
 .paginationRow {
-  display: grid;
-  align-items: center;
-  justify-items: center;
-}
-
-.pageSizeNotVisible {
-  grid-column: 1;
-  display: inline-flex;
-  gap: 0.5rem;
-  visibility: hidden;
-
-  :global(.ui.selection.dropdown > .text) {
-    font-size: 1rem;
-  }
-}
-
-.pagination {
-  grid-column: 2;
-  justify-self: center;
+  display: flex;
+  justify-content: center;
 }
 
 .pageSize {
-  grid-column: 3;
-  justify-self: end;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 2em;
-  margin-bottom: 2em;
+  color: $raven;
+  line-height: 1;
+  white-space: nowrap;
 
-  :global(.ui.selection.dropdown > .text) {
-    font-size: 1rem;
+  :global(.ui.inline.dropdown) {
+    display: inline-flex;
+    align-items: center;
+    color: $dark-blue;
+    font-weight: 600;
+    line-height: 1.25em;
+
+    :global(.dropdown.icon) {
+      flex: 0 0 auto;
+      margin: 0 0 0 0.35em;
+    }
+
+    :global(.menu) {
+      min-width: 5em;
+      margin-top: 0.75em !important;
+      border-color: darken($sepia, 4%) !important;
+      border-radius: 0.4em !important;
+      box-shadow: 0 5px 18px rgba($dark-blue, 0.12) !important;
+    }
   }
 }
 
 .pageSizeLabel {
-  font-size: 1rem;
+  margin-right: 0.35em;
+  font-size: 0.9em;
+  line-height: 1.25em;
 }
