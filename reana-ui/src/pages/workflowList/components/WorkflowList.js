@@ -50,15 +50,26 @@ WorkflowListItem.propTypes = {
 };
 
 export default function WorkflowList({ workflows, loading }) {
-  if (loading) return <Loader active />;
+  if (loading && !workflows.length) {
+    return (
+      <div className={styles.listLoading}>
+        <Loader active />
+      </div>
+    );
+  }
   if (!workflows.length) {
     return <Message info icon="info circle" content="No workflows found." />;
   }
   return (
     <>
-      {workflows.map((workflow) => (
-        <WorkflowListItem key={workflow.id} workflow={workflow} />
-      ))}
+      <div className={styles.list}>
+        <div className={loading ? styles.dimmed : undefined}>
+          {workflows.map((workflow) => (
+            <WorkflowListItem key={workflow.id} workflow={workflow} />
+          ))}
+        </div>
+        {loading && <Loader active />}
+      </div>
       <InteractiveSessionModal />
       <WorkflowDeleteModal />
       <WorkflowPruneModal />

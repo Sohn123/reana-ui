@@ -168,42 +168,38 @@ function Workflows() {
               </div>
               <div className={styles.resultControls}>
                 <WorkflowSorting value={sort} sort={setSort} />
-                {!loading && (
-                  <>
-                    <span className={styles.metaSeparator}>·</span>
-                    <div className={styles.pageSize}>
-                      <span className={styles.pageSizeLabel}>
-                        Results per page:
-                      </span>
-                      <Dropdown
-                        inline
-                        options={
-                          WORKFLOW_LIST_PAGE_SIZE_OPTIONS.some(
-                            (o) => o.value === pageSize,
-                          )
-                            ? WORKFLOW_LIST_PAGE_SIZE_OPTIONS
-                            : [
-                                ...WORKFLOW_LIST_PAGE_SIZE_OPTIONS,
-                                {
-                                  key: pageSize,
-                                  text: String(pageSize),
-                                  value: pageSize,
-                                },
-                              ].sort((a, b) => a.value - b.value)
-                        }
-                        value={pageSize}
-                        onChange={(_, { value }) => {
-                          const newSize = Number(value);
-                          setPageSize(newSize);
-                        }}
-                      />
-                    </div>
-                  </>
-                )}
+                <span className={styles.metaSeparator}>·</span>
+                <div className={styles.pageSize}>
+                  <span className={styles.pageSizeLabel}>
+                    Results per page:
+                  </span>
+                  <Dropdown
+                    inline
+                    options={
+                      WORKFLOW_LIST_PAGE_SIZE_OPTIONS.some(
+                        (o) => o.value === pageSize,
+                      )
+                        ? WORKFLOW_LIST_PAGE_SIZE_OPTIONS
+                        : [
+                            ...WORKFLOW_LIST_PAGE_SIZE_OPTIONS,
+                            {
+                              key: pageSize,
+                              text: String(pageSize),
+                              value: pageSize,
+                            },
+                          ].sort((a, b) => a.value - b.value)
+                    }
+                    value={pageSize}
+                    onChange={(_, { value }) => {
+                      const newSize = Number(value);
+                      setPageSize(newSize);
+                    }}
+                  />
+                </div>
               </div>
             </div>
             <WorkflowList workflows={workflowArray} loading={loading} />
-            {!loading && workflowsCount > 0 && (
+            {workflowsCount > 0 && (
               <div className={styles.paginationRow}>
                 <span className={styles.resultSummary}>
                   Showing {(page - 1) * pageSize + 1}–

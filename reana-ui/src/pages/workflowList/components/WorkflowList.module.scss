@@ -37,3 +37,20 @@
     background-color: lighten($sepia, 3%);
   }
 }
+
+.list {
+  position: relative;
+  // contained stacking context — keeps the refetch loader below the sticky bars
+  z-index: 1;
+}
+
+.dimmed {
+  opacity: 0.45;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.listLoading {
+  position: relative;
+  min-height: 8em;
+}
