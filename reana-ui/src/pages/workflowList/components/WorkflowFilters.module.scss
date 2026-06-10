@@ -35,22 +35,72 @@
 
 .personDropdown {
   &:global(.ui.selection.dropdown) {
-    border-color: darken($sepia, 4%) !important;
-    border-radius: 0.4em !important;
-    background-color: rgba(white, 0.72) !important;
-    color: $dark-blue !important;
+    min-height: 0;
+    padding: 0.65em 2.1em 0.65em 0.7em !important;
+    border: 1px solid darken($sepia, 4%) !important;
+    border-radius: 0.35em !important;
+    background-color: white !important;
+    box-shadow: none !important;
+    color: $raven !important;
+    font-weight: 400;
 
-    &:hover,
-    &:focus,
-    &:global(.active) {
-      border-color: rgba($dark-blue, 0.35) !important;
+    &:hover {
+      border-color: rgba($dark-blue, 0.3) !important;
+      color: $dark-blue !important;
     }
+
+    &:focus,
+    &:global(.active),
+    &:global(.visible) {
+      border-color: rgba($dark-blue, 0.45) !important;
+      background-color: rgba(white, 0.96) !important;
+      box-shadow: 0 0 0 2px rgba($dark-blue, 0.06) !important;
+      color: $dark-blue !important;
+    }
+  }
+
+  > :global(.dropdown.icon) {
+    position: absolute !important;
+    top: 50% !important;
+    right: 0.7em !important;
+    width: auto;
+    height: auto;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: $raven;
+    line-height: 1 !important;
+    transform: translateY(-50%);
+  }
+
+  > :global(.text) {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+
+    :global(.icon) {
+      margin-right: 0.55em;
+      color: $raven;
+    }
+  }
+
+  > :global(input.search) {
+    padding: 0.65em 2.1em 0.65em 0.7em !important;
   }
 
   :global(.menu) {
     border-color: darken($sepia, 4%) !important;
     border-radius: 0 0 0.4em 0.4em !important;
     box-shadow: 0 5px 18px rgba($dark-blue, 0.12) !important;
+
+    :global(.item) {
+      padding: 0.65em 0.7em !important;
+      color: $raven !important;
+    }
+
+    :global(.selected.item) {
+      background-color: rgba($dark-blue, 0.08) !important;
+      color: $dark-blue !important;
+    }
   }
 }
 

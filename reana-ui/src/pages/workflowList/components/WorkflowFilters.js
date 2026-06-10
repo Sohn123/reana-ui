@@ -89,6 +89,7 @@ export default function WorkflowFilters({
           <Dropdown
             fluid
             selection
+            compact
             search
             scrolling
             options={sharedByUserOptions}
@@ -106,6 +107,7 @@ export default function WorkflowFilters({
           <Dropdown
             fluid
             selection
+            compact
             search
             scrolling
             options={sharedWithUserOptions}
