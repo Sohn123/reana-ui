@@ -34,7 +34,9 @@ function WorkflowListQueryProbe({ onChange }) {
 
   return (
     <>
-      <button onClick={() => workflowListQuery.setSharing("you", undefined)}>
+      <button
+        onClick={() => workflowListQuery.setSharing(undefined, undefined)}
+      >
         Owned by you
       </button>
       <button
@@ -65,14 +67,14 @@ function renderWorkflowListQuery(initialEntry) {
 }
 
 describe("parseWorkflowListQuery", () => {
-  it("defaults to owned by you when no sharing filter is set", () => {
+  it("defaults to your workflows with no sharing refinement", () => {
     const query = parseQuery("");
 
     expect(query).toEqual(
       expect.objectContaining({
         page: 1,
         pageSize: WORKFLOW_LIST_DEFAULT_PAGE_SIZE,
-        ownedBy: "you",
+        ownedBy: undefined,
         sharedWith: undefined,
       }),
     );
@@ -86,7 +88,7 @@ describe("parseWorkflowListQuery", () => {
     );
   });
 
-  it("supports legacy shared=true as shared with me", () => {
+  it("supports legacy shared=true as shared workflows", () => {
     const query = parseQuery("shared=true");
 
     expect(query).toEqual(
@@ -97,9 +99,19 @@ describe("parseWorkflowListQuery", () => {
     );
     expect(serializeQueryToApiParams(query)).toEqual(
       expect.objectContaining({
-        shared: true,
-        sharedBy: undefined,
+        shared: false,
+        sharedBy: "anybody",
         sharedWith: undefined,
+      }),
+    );
+  });
+
+  it("supports private owned workflows", () => {
+    expect(serializeQueryString("shared-with=nobody")).toEqual(
+      expect.objectContaining({
+        shared: false,
+        sharedBy: undefined,
+        sharedWith: "nobody",
       }),
     );
   });
@@ -207,18 +219,18 @@ describe("useWorkflowListQuery", () => {
     fireEvent.click(screen.getByRole("button", { name: "Owned by you" }));
 
     await waitFor(() => {
-      expect(latest().location.search).toBe("?owned-by=you");
+      expect(latest().location.search).toBe("");
     });
     expect(latest().workflowListQuery.query).toEqual(
       expect.objectContaining({
         page: 1,
-        ownedBy: "you",
+        ownedBy: undefined,
         sharedWith: undefined,
       }),
     );
   });
 
-  it("writes owned-by=anybody explicitly because the empty URL defaults to you", async () => {
+  it("writes owned-by=anybody explicitly because the empty URL defaults to your workflows", async () => {
     const { latest } = renderWorkflowListQuery("/workflows?page=3");
 
     fireEvent.click(screen.getByRole("button", { name: "Owned by anybody" }));

@@ -13,7 +13,7 @@ import { NON_DELETED_STATUSES, WORKFLOW_STATUSES } from "~/config";
 export const WORKFLOW_LIST_PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100].map(
   (size) => ({
     key: size,
-    text: String(size),
+    text: `${size}`,
     value: size,
   }),
 );
@@ -38,14 +38,17 @@ const isValidStatus = (status) =>
  * - open-sessions: "true" or absent
  *
  * Sharing (mutually exclusive; shared-with takes priority):
- * - shared-with: "anybody" | email — i-shared mode
- * - owned-by: "you" | "anybody" | email — mine / shared-with-me mode
+ * - shared-with: "nobody" | "anybody" | email — owned-workflow refinement
+ * - owned-by: "anybody" | email — workflows not owned by the current user
+ *
  *
  * Legacy params (read-only, never written):
- * - ?shared=true         → ownedBy="anybody"
- * - ?shared-with=true    → sharedWith="anybody"
- *
- * Missing sharing params default to ownedBy="you".
+ * - ?shared=true              → ownedBy="anybody"
+ * - ?shared-with=true         → sharedWith="anybody"
+ * - ?shared-by=<email>        → ownedBy=<email>
+ * - ?owned-by=you             → ownedBy=undefined (default "mine" view)
+
+ * Missing sharing params default to ownedBy=undefined (default "mine" view).
  */
 export function parseWorkflowListQuery(searchParams) {
   const rawPage = Number.parseInt(searchParams.get("page") || "", 10);
@@ -79,16 +82,16 @@ export function parseWorkflowListQuery(searchParams) {
 
   let ownedBy;
   if (sharedWith !== undefined) {
-    ownedBy = undefined; // irrelevant in i-shared mode
+    ownedBy = undefined; // irrelevant when refining owned workflows
   } else {
     const rawOwnedBy = searchParams.get("owned-by");
     const rawSharedBy = searchParams.get("shared-by"); // legacy
-    if (rawOwnedBy) ownedBy = rawOwnedBy;
+    if (rawOwnedBy && rawOwnedBy !== "you") ownedBy = rawOwnedBy;
     else if (rawSharedBy)
       ownedBy = rawSharedBy; // legacy
     else if (searchParams.get("shared") === "true")
       ownedBy = "anybody"; // legacy
-    else ownedBy = "you";
+    else ownedBy = undefined;
   }
 
   return {
@@ -109,34 +112,13 @@ export function parseWorkflowListQuery(searchParams) {
  * Serializes the normalized query model to API request parameters.
  */
 export function serializeQueryToApiParams(query) {
-  let shared, ownedBy, sharedWith;
-
-  if (query.sharedWith !== undefined) {
-    // i-shared mode
-    shared = false;
-    ownedBy = undefined;
-    sharedWith = query.sharedWith;
-  } else if (query.ownedBy === "you") {
-    // mine only
-    shared = false;
-    ownedBy = undefined;
-    sharedWith = undefined;
-  } else if (query.ownedBy === "anybody") {
-    // shared-with-me (anybody)
-    shared = true;
-    ownedBy = undefined;
-    sharedWith = undefined;
-  } else if (query.ownedBy) {
-    // shared-with-me specific email
-    shared = false;
-    ownedBy = query.ownedBy;
-    sharedWith = undefined;
-  } else {
-    // mine only (default)
-    shared = false;
-    ownedBy = undefined;
-    sharedWith = undefined;
-  }
+  // `shared-with` refines the current user's own workflows; otherwise
+  // `owned-by` ("anybody" or a specific email) selects workflows shared with
+  // them. `shared` is always false — the owned/shared distinction is carried by
+  // sharedBy / sharedWith below.
+  const { sharedWith } = query;
+  const ownedBy =
+    sharedWith !== undefined ? undefined : query.ownedBy || undefined;
 
   let status;
   if (query.hasStatusFilter) {
@@ -158,7 +140,7 @@ export function serializeQueryToApiParams(query) {
     },
     search: query.search.trim() || undefined,
     status,
-    shared,
+    shared: false,
     sharedBy: ownedBy,
     sharedWith,
     sort: query.sort,
