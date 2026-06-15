@@ -66,6 +66,33 @@ export function useWorkflowListQuery() {
     }
   }, [searchParams, setSearchParams]);
 
+  useEffect(() => {
+    const hasLegacySharingParams =
+      searchParams.has("shared") ||
+      searchParams.has("shared-by") ||
+      searchParams.get("owned-by") === "you" ||
+      searchParams.get("shared-with") === "true";
+
+    if (hasLegacySharingParams) {
+      const { ownedBy, sharedWith } = parseWorkflowListQuery(searchParams);
+      updateParams(
+        setSearchParams,
+        (next) => {
+          next.delete("shared");
+          next.delete("shared-by");
+          next.delete("owned-by");
+          next.delete("shared-with");
+          if (sharedWith !== undefined) {
+            next.set("shared-with", sharedWith);
+          } else if (ownedBy) {
+            next.set("owned-by", ownedBy);
+          }
+        },
+        { replace: true },
+      );
+    }
+  }, [searchParams, setSearchParams]);
+
   const submitSearch = useCallback(() => {
     const nextSearch = searchText.trim();
     updateParams(setSearchParams, (next) => {
@@ -174,7 +201,7 @@ export function useWorkflowListQuery() {
           if (ownedBy) {
             next.set("owned-by", ownedBy);
           } else {
-            next.delete("owned-by"); // both undefined -> URL default (owned by you)
+            next.delete("owned-by"); // both undefined -> default "Your workflows" view
           }
         }
         resetPage(next);
@@ -182,6 +209,33 @@ export function useWorkflowListQuery() {
     },
     [setSearchParams],
   );
+
+  const clearFilters = useCallback(() => {
+    setSearchText("");
+    updateParams(setSearchParams, (next) => {
+      next.delete("search");
+      next.delete("status");
+      next.delete("show-deleted");
+      next.delete("open-sessions");
+      if (next.get("owned-by")) {
+        next.set("owned-by", "anybody");
+      } else {
+        next.delete("owned-by");
+      }
+      next.delete("shared-with");
+      next.delete("shared");
+      next.delete("shared-by");
+      resetPage(next);
+    });
+  }, [setSearchParams]);
+
+  const hasActiveFilters =
+    Boolean(query.search) ||
+    query.hasStatusFilter ||
+    query.includeDeleted ||
+    query.showOpenSessionsOnly ||
+    (Boolean(query.ownedBy) && query.ownedBy !== "anybody") ||
+    query.sharedWith !== undefined;
 
   const requestParams = useMemo(
     () => serializeQueryToApiParams(query),
@@ -201,5 +255,7 @@ export function useWorkflowListQuery() {
     setSort,
     setShowOpenSessionsOnly,
     setSharing,
+    clearFilters,
+    hasActiveFilters,
   };
 }

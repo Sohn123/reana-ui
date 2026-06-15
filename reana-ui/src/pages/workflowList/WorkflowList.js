@@ -11,7 +11,14 @@
 import moment from "moment";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Container, Dimmer, Dropdown, Icon, Loader } from "semantic-ui-react";
+import {
+  Button,
+  Container,
+  Dimmer,
+  Dropdown,
+  Icon,
+  Loader,
+} from "semantic-ui-react";
 
 import { fetchUsersSharedWithYou, fetchWorkflows } from "~/actions";
 import {
@@ -25,11 +32,14 @@ import {
   getWorkflowRefresh,
   getUsersSharedWithYou,
 } from "~/selectors";
-import { Title, Pagination, Search } from "~/components";
+import { Pagination, Search } from "~/components";
 import BasePage from "../BasePage";
 import Welcome from "./components/Welcome";
+import WorkflowCategoryTabs from "./components/WorkflowCategoryTabs";
 import WorkflowFilters from "./components/WorkflowFilters";
 import WorkflowList from "./components/WorkflowList";
+import WorkflowSorting from "./components/WorkflowSorting";
+import { useWorkflowContinuationCue } from "./useWorkflowContinuationCue";
 import { useWorkflowListQuery } from "./useWorkflowListQuery";
 import { WORKFLOW_LIST_PAGE_SIZE_OPTIONS } from "./workflowListQuery";
 import styles from "./WorkflowList.module.scss";
@@ -70,6 +80,8 @@ function Workflows() {
     setSort,
     setShowOpenSessionsOnly,
     setSharing,
+    clearFilters,
+    hasActiveFilters,
   } = useWorkflowListQuery();
   const {
     page,
@@ -82,6 +94,7 @@ function Workflows() {
     ownedBy,
     sharedWith,
   } = query;
+  const category = ownedBy ? "shared-with-me" : "mine";
 
   // Load information about users who have shared workflows with you
   useEffect(() => {
@@ -120,6 +133,15 @@ function Workflows() {
     dispatch(fetchWorkflows({ ...apiParams, showLoader: false }));
   }, [workflowRefresh, dispatch, configLoaded]);
 
+  const { listEndRef, footerRef, showContinuationCue } =
+    useWorkflowContinuationCue({
+      workflows,
+      workflowsCount,
+      page,
+      pageSize,
+      loading,
+    });
+
   if (hideWelcomePage) {
     return (
       loading && (
@@ -136,89 +158,145 @@ function Workflows() {
 
   // Flatten workflows object to array for rendering
   const workflowArray = Object.values(workflows || {});
+  const pageSizeOptions = WORKFLOW_LIST_PAGE_SIZE_OPTIONS.some(
+    (option) => option.value === pageSize,
+  )
+    ? WORKFLOW_LIST_PAGE_SIZE_OPTIONS
+    : [
+        ...WORKFLOW_LIST_PAGE_SIZE_OPTIONS,
+        {
+          key: pageSize,
+          text: `${pageSize}`,
+          value: pageSize,
+        },
+      ].sort((a, b) => a.value - b.value);
+  const firstResult = workflowsCount > 0 ? (page - 1) * pageSize + 1 : 0;
+  const lastResult =
+    workflowsCount > 0 ? Math.min(page * pageSize, workflowsCount) : 0;
+  const totalPages = Math.ceil(workflowsCount / pageSize);
+  const showPagination = workflowsCount > pageSize;
+  const hasVisibleWorkflows = workflowArray.length > 0;
 
   return (
     <div className={styles.container}>
       <Container text className={styles["workflow-list-container"]}>
-        <Title className={styles.title}>
-          <span>Your workflows</span>
-          <span className={styles.refresh}>
-            <Icon
-              name="refresh"
-              className={styles.icon}
-              onClick={() => window.location.reload()}
-            />
-            Refreshed at {refreshedAt}
-          </span>
-        </Title>
-        <Search
-          value={searchText}
-          onChange={setSearchText}
-          onSubmit={submitSearch}
+        <WorkflowCategoryTabs
+          category={category}
+          setCategory={(nextCategory) =>
+            setSharing(
+              nextCategory === "shared-with-me" ? "anybody" : undefined,
+              undefined,
+            )
+          }
+          refreshedAt={refreshedAt}
+          refresh={() => window.location.reload()}
         />
-        <WorkflowFilters
-          ownedBy={ownedBy}
-          sharedWith={sharedWith}
-          setSharing={setSharing}
-          statusFilter={status}
-          setStatusFilter={setStatus}
-          includeDeleted={includeDeleted}
-          setIncludeDeleted={setIncludeDeleted}
-          hasStatusFilter={hasStatusFilter}
-          showOpenSessionsOnly={showOpenSessionsOnly}
-          setShowOpenSessionsOnly={setShowOpenSessionsOnly}
-          sortDir={sort}
-          setSortDir={setSort}
-        />
-        <WorkflowList workflows={workflowArray} loading={loading} />
-        {!loading && (
-          <div className={styles.paginationRow}>
-            {/* To emulate size of page-size dropdown and ensure page buttons stay in middle of screen */}
-            <div className={styles.pageSizeNotVisible}>
-              <span className={styles.pageSizeLabel}>Results per page:</span>
-              <Dropdown
-                selection
-                compact
-                options={WORKFLOW_LIST_PAGE_SIZE_OPTIONS}
-                value={pageSize}
-              />
+        <div className={styles.browser}>
+          <WorkflowFilters
+            category={category}
+            ownedBy={ownedBy}
+            sharedWith={sharedWith}
+            setSharing={setSharing}
+            statusFilter={status}
+            setStatusFilter={setStatus}
+            includeDeleted={includeDeleted}
+            setIncludeDeleted={setIncludeDeleted}
+            hasStatusFilter={hasStatusFilter}
+            showOpenSessionsOnly={showOpenSessionsOnly}
+            setShowOpenSessionsOnly={setShowOpenSessionsOnly}
+          />
+          <main className={styles.results}>
+            <div className={styles.resultsHeader}>
+              <div className={styles.search}>
+                <Search
+                  value={searchText}
+                  onChange={setSearchText}
+                  onSubmit={submitSearch}
+                  placeholder="Search by workflow name..."
+                />
+              </div>
+              <div className={styles.resultControls}>
+                <WorkflowSorting value={sort} sort={setSort} />
+                {hasActiveFilters && (
+                  <Button
+                    compact
+                    className={styles.clearFilters}
+                    onClick={clearFilters}
+                  >
+                    <Icon name="remove filter" />
+                    Clear filters
+                  </Button>
+                )}
+              </div>
             </div>
-            {workflowsCount > pageSize && (
-              <Pagination
-                className={styles.pagination}
-                activePage={page}
-                totalPages={Math.ceil(workflowsCount / pageSize)}
-                onPageChange={(_, { activePage }) => setPage(activePage)}
-              />
+            {workflowsCount > 0 && (
+              <div className={styles.resultContext}>
+                Showing {firstResult}–{lastResult} of {workflowsCount}{" "}
+                {workflowsCount === 1 ? "workflow" : "workflows"}
+              </div>
             )}
-            <div className={styles.pageSize}>
-              <span className={styles.pageSizeLabel}>Results per page:</span>
-              <Dropdown
-                selection
-                compact
-                options={
-                  WORKFLOW_LIST_PAGE_SIZE_OPTIONS.some(
-                    (o) => o.value === pageSize,
-                  )
-                    ? WORKFLOW_LIST_PAGE_SIZE_OPTIONS
-                    : [
-                        ...WORKFLOW_LIST_PAGE_SIZE_OPTIONS,
-                        {
-                          key: pageSize,
-                          text: String(pageSize),
-                          value: pageSize,
-                        },
-                      ].sort((a, b) => a.value - b.value)
-                }
-                value={pageSize}
-                onChange={(_, { value }) => {
-                  const newSize = Number(value);
-                  setPageSize(newSize);
-                }}
-              />
+            <div className={styles.resultsBody}>
+              <div className={styles.workflowListFrame}>
+                <WorkflowList
+                  workflows={workflowArray}
+                  loading={loading}
+                  hasActiveFilters={hasActiveFilters}
+                  clearFilters={clearFilters}
+                />
+                {loading && hasVisibleWorkflows && (
+                  <div className={styles.loadingOverlay}>
+                    <div className={styles.loadingIndicator}>
+                      <Loader active inline />
+                    </div>
+                  </div>
+                )}
+              </div>
+              {loading && !hasVisibleWorkflows && (
+                <div className={styles.loadingOverlay}>
+                  <div className={styles.loadingIndicator}>
+                    <Loader active inline />
+                  </div>
+                </div>
+              )}
+              <div ref={listEndRef} aria-hidden="true" />
             </div>
-          </div>
-        )}
+            <div
+              ref={footerRef}
+              className={`${styles.paginationRow} ${
+                workflowsCount <= pageSize
+                  ? styles.paginationRowWithoutPagination
+                  : ""
+              } ${showContinuationCue ? styles.paginationRowWithCue : ""}`}
+            >
+              <div className={styles.pageSize}>
+                <span>Show</span>
+                <Dropdown
+                  inline
+                  aria-label="Results per page"
+                  options={pageSizeOptions}
+                  value={pageSize}
+                  onChange={(_, { value }) => setPageSize(Number(value))}
+                />
+                <span>per page</span>
+              </div>
+              <div
+                className={`${styles.paginationSlot} ${
+                  showPagination ? "" : styles.paginationSlotEmpty
+                }`}
+                aria-hidden={!showPagination}
+              >
+                {showPagination && (
+                  <Pagination
+                    className={styles.pagination}
+                    activePage={page}
+                    totalPages={totalPages}
+                    onPageChange={(_, { activePage }) => setPage(activePage)}
+                  />
+                )}
+              </div>
+            </div>
+          </main>
+        </div>
       </Container>
     </div>
   );
