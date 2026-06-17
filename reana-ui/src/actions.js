@@ -14,7 +14,6 @@ import client, {
   CONFIG_URL,
   INTERACTIVE_SESSIONS_CLOSE_URL,
   INTERACTIVE_SESSIONS_OPEN_URL,
-  isNoActiveTokensError,
   USER_INFO_URL,
   USER_SIGNOUT_URL,
   USERS_SHARED_WITH_YOU_URL,
@@ -53,19 +52,8 @@ export const CONFIG_ERROR = "Fetch app config error";
 export const USER_FETCH = "Fetch user authentication info";
 export const USER_RECEIVED = "User info received";
 export const USER_FETCH_ERROR = "User fetch error";
-export const USER_SIGNUP = "Sign user up";
-export const USER_SIGNEDUP = "User signed up";
-export const USER_SIGNIN = "Sign user in";
-export const USER_SIGNEDIN = "User signed in";
 export const USER_SIGNOUT = "Sign user out";
-export const USER_SIGN_ERROR = "User sign in/up error";
 export const USER_SIGNEDOUT = "User signed out";
-export const USER_REQUEST_TOKEN = "Request user token";
-export const USER_TOKEN_REQUESTED = "User token requested";
-export const USER_TOKEN_ERROR = "User token error";
-export const USER_EMAIL_CONFIRMATION = "User request email confirmation";
-export const USER_EMAIL_CONFIRMED = "User email confirmed";
-export const USER_EMAIL_CONFIRMATION_ERROR = "User email confirmation error";
 
 export const QUOTA_FETCH = "Fetch user quota info";
 export const QUOTA_RECEIVED = "User quota info received";
@@ -113,8 +101,9 @@ export const USERS_YOU_SHARED_WITH_RECEIVED =
   "Users you shared workflows with received";
 
 export function errorActionCreator(error, name) {
-  const { status, data } = error?.response;
-  const { message } = data;
+  const { status, data = {} } = error?.response ?? {};
+  const message =
+    data?.message ?? error?.message ?? "The request could not be completed.";
   return {
     type: ERROR,
     name,
@@ -163,86 +152,28 @@ export function loadUser({ loader = true } = {}) {
         dispatch({ type: QUOTA_RECEIVED, ...resp.data });
       })
       .catch((err) => {
-        // 403 Forbidden, user token was revoked.
-        // 401 Unauthorized, user did not sign in, we fail silently.
+        // 401 Unauthorized: user did not sign in, fail silently.
         let errorData;
-        if (err.response.status !== 401) {
+        if (err?.response?.status !== 401) {
           const {
+            status,
             statusText,
-            data: { message },
-          } = err.response;
-          errorData = { statusText, message };
+            data: { code, message } = {},
+          } = err.response ?? {};
+          errorData = { status, statusText, code, message };
           dispatch(errorActionCreator(err, USER_INFO_URL));
         }
-        dispatch({ type: USER_FETCH_ERROR, ...errorData });
+        // Only a foreground fetch (the initial app load) may block the whole
+        // app behind App's error gate. A background refresh (e.g. Profile's
+        // loader: false re-fetch) already surfaced the failure via the
+        // notification dispatched above; escalating it further would let a
+        // single transient blip on an already-signed-in session tear down
+        // the entire app with no way back except a manual reload.
+        dispatch({ type: USER_FETCH_ERROR, loader, ...errorData });
         dispatch({ type: QUOTA_FETCH_ERROR, ...errorData });
       });
   };
 }
-
-function userSignFactory(initAction, succeedAction, request, body) {
-  return async (dispatch, getStore) => {
-    const state = getStore();
-    const { userConfirmation, accessTokenIssuancePolicy } = getConfig(state);
-    const tokenPolicyRaw = String(accessTokenIssuancePolicy ?? "manual")
-      .trim()
-      .toLowerCase();
-    const tokenPolicy =
-      tokenPolicyRaw === "auto" || tokenPolicyRaw === "manual"
-        ? tokenPolicyRaw
-        : "manual";
-    const shouldNotifyEmailConfirmation =
-      userConfirmation && tokenPolicy !== "auto";
-
-    dispatch({ type: initAction });
-    return await request(body)
-      .then((resp) => {
-        dispatch(clearNotification);
-        dispatch({ type: succeedAction });
-        dispatch(loadUser());
-        if (initAction === USER_SIGNUP) {
-          if (shouldNotifyEmailConfirmation) {
-            dispatch(
-              triggerNotification(
-                "Success!",
-                `User registered. ${
-                  userConfirmation
-                    ? "Please confirm your email by clicking on the link we sent you."
-                    : ""
-                }`,
-              ),
-            );
-          }
-        }
-        return resp;
-      })
-      .catch((err) => {
-        // validation errors
-        if (err.response.data.errors) {
-          dispatch({ type: USER_SIGN_ERROR, ...err.response.data });
-        } else {
-          dispatch(errorActionCreator(err, USER_SIGN_ERROR));
-        }
-        return err;
-      });
-  };
-}
-
-export const userSignup = (formData) =>
-  userSignFactory(
-    USER_SIGNUP,
-    USER_SIGNEDUP,
-    client.signUp.bind(client),
-    formData,
-  );
-
-export const userSignin = (formData) =>
-  userSignFactory(
-    USER_SIGNIN,
-    USER_SIGNEDIN,
-    client.signIn.bind(client),
-    formData,
-  );
 
 export function userSignout() {
   return async (dispatch) => {
@@ -251,41 +182,12 @@ export function userSignout() {
       .signOut()
       .then((resp) => {
         dispatch({ type: USER_SIGNEDOUT });
+        if (resp.data?.logout_url) {
+          window.location.assign(resp.data.logout_url);
+        }
       })
       .catch((err) => {
         dispatch(errorActionCreator(err, USER_SIGNOUT_URL));
-      });
-  };
-}
-
-export function requestToken() {
-  return async (dispatch) => {
-    dispatch({ type: USER_REQUEST_TOKEN });
-    return await client
-      .requestToken()
-      .then((resp) => dispatch({ type: USER_TOKEN_REQUESTED, ...resp.data }))
-      .catch((err) => {
-        dispatch(errorActionCreator(err, USER_INFO_URL));
-        dispatch({ type: USER_TOKEN_ERROR });
-      });
-  };
-}
-
-export function confirmUserEmail(token) {
-  return async (dispatch) => {
-    dispatch({ type: USER_EMAIL_CONFIRMATION });
-    return await client
-      .confirmEmail({ token })
-      .then((resp) => {
-        dispatch({ type: USER_EMAIL_CONFIRMED });
-        dispatch(triggerNotification("Success!", resp.data?.message));
-      })
-      .catch((err) => {
-        // adapt error format coming from invenio-accounts (remove array)
-        if (Array.isArray(err.response?.data?.message)) {
-          err.response.data.message = err.response?.data?.message[0];
-        }
-        dispatch(errorActionCreator(err, USER_EMAIL_CONFIRMATION_ERROR));
       });
   };
 }
@@ -630,15 +532,6 @@ export function fetchUsersSharedWithYou() {
         return resp;
       })
       .catch((err) => {
-        // User is signed in but has no access token yet (manual policy)
-        // Do not show a global red error notification
-        if (isNoActiveTokensError(err)) {
-          dispatch({
-            type: USERS_SHARED_WITH_YOU_RECEIVED,
-            usersSharedYouWith: [],
-          });
-          return;
-        }
         dispatch(errorActionCreator(err, USERS_SHARED_WITH_YOU_URL));
       });
   };
@@ -656,13 +549,6 @@ export function fetchUsersYouSharedWith() {
         return resp;
       })
       .catch((err) => {
-        if (isNoActiveTokensError(err)) {
-          dispatch({
-            type: USERS_YOU_SHARED_WITH_RECEIVED,
-            usersYouSharedWith: [],
-          });
-          return;
-        }
         dispatch(errorActionCreator(err, USERS_YOU_SHARED_WITH_URL));
       });
   };
