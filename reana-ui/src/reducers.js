@@ -70,7 +70,8 @@ export const configInitialState = {
   privacyNoticeURL: null,
   cernSSO: false,
   eoscSSO: false,
-  loginProviderConfig: null,
+  loginProviderConfig: [],
+  auth: {},
   adminEmail: null,
   maxInteractiveSessionInactivityPeriod: null,
   localUsers: false,
@@ -182,7 +183,8 @@ const config = (state = configInitialState, action) => {
         privacyNoticeURL: action.privacy_notice_url,
         cernSSO: action.cern_sso,
         eoscSSO: action.eosc_sso,
-        loginProviderConfig: action.login_provider_config,
+        loginProviderConfig: action.login_provider_config ?? [],
+        auth: action.auth ?? {},
         adminEmail: action.admin_email,
         maxInteractiveSessionInactivityPeriod:
           action.maximum_interactive_session_inactivity_period,
@@ -212,7 +214,7 @@ const auth = (state = authInitialState, action) => {
     case USER_RECEIVED:
       return {
         ...state,
-        id: action.id_,
+        id: action.id ?? action.id_,
         email: action.email,
         fullName: action.full_name,
         username: action.username,

@@ -251,6 +251,9 @@ export function userSignout() {
       .signOut()
       .then((resp) => {
         dispatch({ type: USER_SIGNEDOUT });
+        if (resp.data?.logout_url) {
+          window.location.assign(resp.data.logout_url);
+        }
       })
       .catch((err) => {
         dispatch(errorActionCreator(err, USER_SIGNOUT_URL));

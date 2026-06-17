@@ -17,6 +17,7 @@ import { getConfig } from "~/selectors";
 import SignForm from "./components/SignForm";
 import SignContainer from "./components/SignContainer";
 import { USER_OAUTH_SIGNIN_URL } from "~/client";
+import { api } from "~/config";
 import { triggerNotification, userSignin } from "~/actions";
 import { useSubmit, useDocumentTitle } from "~/hooks";
 
@@ -38,14 +39,26 @@ export default function Signin() {
       : "manual";
   const shouldNotifyEmailConfirmation =
     config.userConfirmation && tokenIssuancePolicy !== "auto";
+  const bffAuth = config.auth ?? {};
 
-  const handleClick = (ssoProvider) => {
+  const getNext = () => {
     const from = location.state?.from || {
       pathname: "/",
       search: "",
       hash: "",
     };
-    const next = `${from.pathname}${from.search}${from.hash}`;
+    return `${from.pathname}${from.search}${from.hash}`;
+  };
+
+  const handleBffClick = () => {
+    const query = new URLSearchParams({ next: getNext() });
+    window.location.href = `${api}${
+      bffAuth.login_url ?? "/api/login"
+    }?${query.toString()}`;
+  };
+
+  const handleClick = (ssoProvider) => {
+    const next = getNext();
     window.location.href = USER_OAUTH_SIGNIN_URL(next, ssoProvider);
     // FIXME: We assume that the sign-up went successfully but we actually don't know.
     // We should upgrade Invenio-OAuthClient to latest version that supports REST apps
@@ -68,6 +81,17 @@ export default function Signin() {
   return (
     <SignContainer>
       <Segment>
+        {bffAuth.bff_enabled && (
+          <Button
+            basic
+            style={{ marginBottom: "5px" }}
+            fluid
+            size="large"
+            onClick={handleBffClick}
+          >
+            Sign in with identity provider
+          </Button>
+        )}
         {config.cernSSO && (
           <>
             <Button
@@ -108,7 +132,8 @@ export default function Signin() {
             </Button>
           </>
         )}
-        {(config.loginProviderConfig.length > 0 ||
+        {(bffAuth.bff_enabled ||
+          config.loginProviderConfig.length > 0 ||
           config.cernSSO ||
           config.eoscSSO) &&
           config.localUsers && (

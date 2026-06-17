@@ -81,6 +81,17 @@ export const DASK_DASHBOARD_URL = (workflow_id) =>
   `${api}/${workflow_id}/dashboard/status`;
 export const LAUNCH_ON_REANA_URL = `${api}/api/launch`;
 
+const CSRF_COOKIE = "reana_csrf";
+const CSRF_HEADER = "X-REANA-CSRF";
+
+function getCookieValue(name) {
+  return document.cookie
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith(`${name}=`))
+    ?.slice(name.length + 1);
+}
+
 class Client {
   /**
    * Class responsible of encapsulating all the network calls so the library used
@@ -104,14 +115,29 @@ class Client {
 
   async _request(
     url,
-    { data = null, method = "get", withCredentials = true, ...options } = {},
+    {
+      data = null,
+      method = "get",
+      withCredentials = true,
+      headers: optionHeaders = {},
+      ...options
+    } = {},
   ) {
+    const requestMethod = method.toLowerCase();
+    const csrfToken = !["get", "head", "options"].includes(requestMethod)
+      ? getCookieValue(CSRF_COOKIE)
+      : null;
+    const headers = {
+      ...optionHeaders,
+      ...(csrfToken ? { [CSRF_HEADER]: csrfToken } : {}),
+    };
     try {
       return await axios({
         method,
         url,
         data,
         withCredentials,
+        headers,
         ...options,
       });
     } catch (error) {
