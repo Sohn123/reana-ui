@@ -9,37 +9,26 @@
 */
 
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Button, Divider, Segment } from "semantic-ui-react";
+import { useSelector } from "react-redux";
+import { Button, Segment } from "semantic-ui-react";
 import { Link, useLocation } from "react-router-dom";
 
 import { getConfig } from "~/selectors";
 import SignForm from "./components/SignForm";
 import SignContainer from "./components/SignContainer";
-import { USER_OAUTH_SIGNIN_URL } from "~/client";
 import { api } from "~/config";
-import { triggerNotification, userSignin } from "~/actions";
+import { userSignin } from "~/actions";
 import { useSubmit, useDocumentTitle } from "~/hooks";
 
 export default function Signin() {
   useDocumentTitle("Sign in");
   const handleSubmit = useSubmit(userSignin);
   const config = useSelector(getConfig);
-  const dispatch = useDispatch();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const location = useLocation();
-  const tokenIssuancePolicyRaw = String(
-    config.accessTokenIssuancePolicy ?? "manual",
-  )
-    .trim()
-    .toLowerCase();
-  const tokenIssuancePolicy =
-    tokenIssuancePolicyRaw === "auto" || tokenIssuancePolicyRaw === "manual"
-      ? tokenIssuancePolicyRaw
-      : "manual";
-  const shouldNotifyEmailConfirmation =
-    config.userConfirmation && tokenIssuancePolicy !== "auto";
   const bffAuth = config.auth ?? {};
+  const bffEnabled = Boolean(bffAuth.bff_enabled);
+  const showLocalLogin = config.localUsers && !bffEnabled;
 
   const getNext = () => {
     const from = location.state?.from || {
@@ -57,22 +46,6 @@ export default function Signin() {
     }?${query.toString()}`;
   };
 
-  const handleClick = (ssoProvider) => {
-    const next = getNext();
-    window.location.href = USER_OAUTH_SIGNIN_URL(next, ssoProvider);
-    // FIXME: We assume that the sign-up went successfully but we actually don't know.
-    // We should upgrade Invenio-OAuthClient to latest version that supports REST apps
-    // and adapt the whole workflow.
-    if (shouldNotifyEmailConfirmation) {
-      dispatch(
-        triggerNotification(
-          "Success!",
-          "User registered. Please confirm your email by clicking on the link we sent you.",
-        ),
-      );
-    }
-  };
-
   const handleInputChange = (event) => {
     const { target } = event;
     setFormData({ ...formData, [target.name]: target.value });
@@ -81,7 +54,7 @@ export default function Signin() {
   return (
     <SignContainer>
       <Segment>
-        {bffAuth.bff_enabled && (
+        {bffEnabled && (
           <Button
             basic
             style={{ marginBottom: "5px" }}
@@ -92,56 +65,7 @@ export default function Signin() {
             Sign in with identity provider
           </Button>
         )}
-        {config.cernSSO && (
-          <>
-            <Button
-              basic
-              style={{ marginBottom: "5px" }}
-              fluid
-              size="large"
-              onClick={() => handleClick("cern_openid")}
-            >
-              Sign in with CERN Single Sign-On
-            </Button>
-          </>
-        )}
-        {config.eoscSSO && (
-          <>
-            <Button
-              basic
-              style={{ marginBottom: "5px" }}
-              fluid
-              size="large"
-              onClick={() => handleClick("eosc_aai")}
-            >
-              Sign in with EOSC EU Node AAI
-            </Button>
-          </>
-        )}
-        {config.loginProviderConfig.length > 0 && (
-          <>
-            <Button
-              basic
-              style={{ marginBottom: "5px" }}
-              fluid
-              size="large"
-              onClick={() => handleClick("keycloak")}
-            >
-              Sign in with {config.loginProviderConfig[0]["config"]["title"]}{" "}
-              Single Sign-On
-            </Button>
-          </>
-        )}
-        {(bffAuth.bff_enabled ||
-          config.loginProviderConfig.length > 0 ||
-          config.cernSSO ||
-          config.eoscSSO) &&
-          config.localUsers && (
-            <Divider section horizontal>
-              or
-            </Divider>
-          )}
-        {config.localUsers && (
+        {showLocalLogin && (
           <SignForm
             submitText="Sign in"
             handleSubmit={(e) => handleSubmit(e, formData, setFormData)}
@@ -150,19 +74,13 @@ export default function Signin() {
           />
         )}
       </Segment>
-      {config.hideSignup && !config.localUsers && config.cernSSO && (
-        <p>
-          Note that you need to hold an official CERN account in order to use
-          this service.
-        </p>
-      )}
-      {config.hideSignup && config.localUsers && (
+      {config.hideSignup && showLocalLogin && (
         <p>
           If you do not have an account yet, please contact
           <a href={`mailto:${config.adminEmail}`}> REANA administrators</a>
         </p>
       )}
-      {!config.hideSignup && config.localUsers && (
+      {!config.hideSignup && showLocalLogin && (
         <p>
           If you do not have an account yet, please
           <Link to="/signup"> Sign up</Link> here

@@ -30,7 +30,6 @@ import {
 import Confirm from "~/pages/signin/Confirm";
 import Signin from "~/pages/signin/Signin";
 import Signup from "~/pages/signin/Signup";
-import OAuthSignin from "~/pages/signin/OAuthSignin";
 import WorkflowList from "~/pages/workflowList/WorkflowList";
 import WorkflowDetails from "~/pages/workflowDetails/WorkflowDetails";
 import Profile from "~/pages/profile/Profile";
@@ -87,7 +86,6 @@ export default function App() {
             }
           />
           <Route path="/confirm/:token" element={<Confirm />} />
-          <Route path="/signin_callback" element={<OAuthSignin />} />
           <Route
             path="/"
             element={

@@ -39,7 +39,7 @@ function WelcomeMsg() {
   const config = useSelector(getConfig);
   return (
     <div>
-      {config.cernSSO ? <WelcomeCERN /> : <WelcomeRegular />}
+      <WelcomeRegular />
       <p>and come back to this web page once launched!</p>
       <p>
         For more information about REANA, please see{" "}
@@ -74,26 +74,6 @@ function WelcomeRegular() {
         <div># set REANA environment variables for the client</div>
         <WelcomeEnvars />
         <div># clone and run a simple analysis example</div>
-        <div>git clone https://github.com/reanahub/reana-demo-root6-roofit</div>
-        <div>cd reana-demo-root6-roofit</div>
-        <div>reana-client run -w root6-roofit</div>
-      </CodeSnippet>
-    </>
-  );
-}
-
-function WelcomeCERN() {
-  const config = useSelector(getConfig);
-  return (
-    <>
-      <p>
-        It seems that you are using REANA for the first time. Would you like to
-        try out a small example? Please login to LXPLUS and launch:
-      </p>
-      <CodeSnippet reveal>
-        <div>ssh lxplus.cern.ch</div>
-        <div>source {config.clientPyvenv}</div>
-        <WelcomeEnvars />
         <div>git clone https://github.com/reanahub/reana-demo-root6-roofit</div>
         <div>cd reana-demo-root6-roofit</div>
         <div>reana-client run -w root6-roofit</div>
