@@ -7,7 +7,15 @@
 */
 
 import reanaApp from "~/reducers";
-import { USER_FETCH, USER_FETCH_ERROR, USER_RECEIVED } from "~/actions";
+import {
+  GITLAB_WEBHOOK_TOKEN_FETCH,
+  GITLAB_WEBHOOK_TOKEN_RECEIVED,
+  GITLAB_WEBHOOK_TOKEN_UPDATED,
+  USER_FETCH,
+  USER_FETCH_ERROR,
+  USER_RECEIVED,
+  USER_SIGNEDOUT,
+} from "~/actions";
 import { USER_ERROR } from "~/errors";
 
 function applyAuthAction(fullState, action) {
@@ -93,4 +101,67 @@ test("a successful fetch clears a previously-set blocking error", () => {
   });
 
   expect(received.auth.error).toEqual({});
+});
+
+test("signing out resets user-specific webhook request state", () => {
+  let state = reanaApp(undefined, {
+    type: GITLAB_WEBHOOK_TOKEN_FETCH,
+    requestId: 17,
+  });
+  state = reanaApp(state, {
+    type: GITLAB_WEBHOOK_TOKEN_RECEIVED,
+    status: { configured: true, expired: true },
+    requestId: 17,
+  });
+  expect(state.gitlabWebhookToken.phase).toBe("ready");
+
+  const signedOut = reanaApp(state, { type: USER_SIGNEDOUT });
+
+  expect(signedOut.gitlabWebhookToken).toEqual({
+    phase: "idle",
+    status: null,
+    retryAt: null,
+    activeRequestId: null,
+  });
+});
+
+test("a response from before sign-out cannot repopulate webhook state", () => {
+  let state = reanaApp(undefined, {
+    type: GITLAB_WEBHOOK_TOKEN_FETCH,
+    requestId: 23,
+  });
+  state = reanaApp(state, { type: USER_SIGNEDOUT });
+
+  const lateResponse = reanaApp(state, {
+    type: GITLAB_WEBHOOK_TOKEN_RECEIVED,
+    status: { configured: true, expired: true },
+    requestId: 23,
+  });
+
+  expect(lateResponse.gitlabWebhookToken).toEqual({
+    phase: "idle",
+    status: null,
+    retryAt: null,
+    activeRequestId: null,
+  });
+});
+
+test("a late status read cannot overwrite a successful renewal", () => {
+  let state = reanaApp(undefined, {
+    type: GITLAB_WEBHOOK_TOKEN_FETCH,
+    requestId: 31,
+  });
+  const renewed = { configured: true, expires_at: "2026-10-01T00:00:00Z" };
+  state = reanaApp(state, {
+    type: GITLAB_WEBHOOK_TOKEN_UPDATED,
+    status: renewed,
+  });
+
+  state = reanaApp(state, {
+    type: GITLAB_WEBHOOK_TOKEN_RECEIVED,
+    requestId: 31,
+    status: { configured: true, expired: true },
+  });
+
+  expect(state.gitlabWebhookToken.status).toEqual(renewed);
 });

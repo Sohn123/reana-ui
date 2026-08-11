@@ -59,6 +59,17 @@ export const QUOTA_FETCH = "Fetch user quota info";
 export const QUOTA_RECEIVED = "User quota info received";
 export const QUOTA_FETCH_ERROR = "User quota fetch error";
 
+export const GITLAB_WEBHOOK_TOKEN_FETCH = "Fetch GitLab webhook token status";
+export const GITLAB_WEBHOOK_TOKEN_RECEIVED =
+  "GitLab webhook token status received";
+export const GITLAB_WEBHOOK_TOKEN_UPDATED =
+  "GitLab webhook token status authoritatively updated";
+export const GITLAB_WEBHOOK_TOKEN_FETCH_ERROR =
+  "Fetch GitLab webhook token status error";
+
+export const GITLAB_WEBHOOK_TOKEN_RETRY_DELAY_MS = 60_000;
+let gitlabWebhookTokenRequestSequence = 0;
+
 export const WORKFLOWS_FETCH = "Fetch workflows info";
 export const WORKFLOWS_RECEIVED = "Workflows info received";
 export const WORKFLOWS_FETCH_ERROR = "Workflows fetch error";
@@ -188,6 +199,38 @@ export function userSignout() {
       })
       .catch((err) => {
         dispatch(errorActionCreator(err, USER_SIGNOUT_URL));
+      });
+  };
+}
+
+export function loadGitlabWebhookTokenStatus({ automaticRetry = false } = {}) {
+  return async (dispatch) => {
+    const requestId = ++gitlabWebhookTokenRequestSequence;
+    dispatch({ type: GITLAB_WEBHOOK_TOKEN_FETCH, requestId });
+    return await client
+      .getGitlabWebhookToken()
+      .then(({ data }) =>
+        dispatch({
+          type: GITLAB_WEBHOOK_TOKEN_RECEIVED,
+          status: data,
+          requestId,
+        }),
+      )
+      .catch((error) => {
+        const responseStatus = error?.response?.status;
+        const transient =
+          responseStatus === undefined ||
+          responseStatus === 408 ||
+          responseStatus === 429 ||
+          responseStatus >= 500;
+        return dispatch({
+          type: GITLAB_WEBHOOK_TOKEN_FETCH_ERROR,
+          retryAt:
+            transient && !automaticRetry
+              ? Date.now() + GITLAB_WEBHOOK_TOKEN_RETRY_DELAY_MS
+              : null,
+          requestId,
+        });
       });
   };
 }

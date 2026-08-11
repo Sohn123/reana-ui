@@ -9,12 +9,17 @@
 import client from "~/client";
 import {
   ERROR,
+  GITLAB_WEBHOOK_TOKEN_FETCH,
+  GITLAB_WEBHOOK_TOKEN_FETCH_ERROR,
+  GITLAB_WEBHOOK_TOKEN_RECEIVED,
+  GITLAB_WEBHOOK_TOKEN_RETRY_DELAY_MS,
   NOTIFICATION,
   USER_FETCH_ERROR,
   USER_SIGNOUT,
   userSignout,
   WORKFLOW_LIST_REFRESH,
   loadUser,
+  loadGitlabWebhookTokenStatus,
   openInteractiveSession,
 } from "~/actions";
 import { USER_INFO_URL, USER_SIGNOUT_URL } from "~/client";
@@ -112,6 +117,77 @@ test("tags a background (loader: false) fetch failure so it can't block the app"
   expect(dispatch).toHaveBeenCalledWith(
     expect.objectContaining({ type: USER_FETCH_ERROR, loader: false }),
   );
+});
+
+test("shares a successful webhook-status request lifecycle", async () => {
+  const status = { configured: true, expired: false };
+  jest
+    .spyOn(client, "getGitlabWebhookToken")
+    .mockResolvedValue({ data: status });
+  const dispatch = jest.fn();
+
+  await loadGitlabWebhookTokenStatus()(dispatch);
+
+  expect(dispatch).toHaveBeenNthCalledWith(1, {
+    type: GITLAB_WEBHOOK_TOKEN_FETCH,
+    requestId: expect.any(Number),
+  });
+  expect(dispatch).toHaveBeenNthCalledWith(2, {
+    type: GITLAB_WEBHOOK_TOKEN_RECEIVED,
+    status,
+    requestId: expect.any(Number),
+  });
+});
+
+test("records one stable retry deadline after a webhook-status failure", async () => {
+  const now = Date.parse("2026-08-25T12:00:00Z");
+  jest.spyOn(Date, "now").mockReturnValue(now);
+  jest
+    .spyOn(client, "getGitlabWebhookToken")
+    .mockRejectedValue(new Error("unavailable"));
+  const dispatch = jest.fn();
+
+  await loadGitlabWebhookTokenStatus()(dispatch);
+
+  expect(dispatch).toHaveBeenNthCalledWith(1, {
+    type: GITLAB_WEBHOOK_TOKEN_FETCH,
+    requestId: expect.any(Number),
+  });
+  expect(dispatch).toHaveBeenNthCalledWith(2, {
+    type: GITLAB_WEBHOOK_TOKEN_FETCH_ERROR,
+    retryAt: now + GITLAB_WEBHOOK_TOKEN_RETRY_DELAY_MS,
+    requestId: expect.any(Number),
+  });
+});
+
+test("does not schedule another retry after the automatic webhook retry", async () => {
+  jest
+    .spyOn(client, "getGitlabWebhookToken")
+    .mockRejectedValue(new Error("still unavailable"));
+  const dispatch = jest.fn();
+
+  await loadGitlabWebhookTokenStatus({ automaticRetry: true })(dispatch);
+
+  expect(dispatch).toHaveBeenLastCalledWith({
+    type: GITLAB_WEBHOOK_TOKEN_FETCH_ERROR,
+    retryAt: null,
+    requestId: expect.any(Number),
+  });
+});
+
+test("does not retry a permanent webhook-status failure", async () => {
+  jest.spyOn(client, "getGitlabWebhookToken").mockRejectedValue({
+    response: { status: 403 },
+  });
+  const dispatch = jest.fn();
+
+  await loadGitlabWebhookTokenStatus()(dispatch);
+
+  expect(dispatch).toHaveBeenLastCalledWith({
+    type: GITLAB_WEBHOOK_TOKEN_FETCH_ERROR,
+    retryAt: null,
+    requestId: expect.any(Number),
+  });
 });
 
 test.each([

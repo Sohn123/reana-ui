@@ -23,6 +23,10 @@ import {
   QUOTA_FETCH,
   QUOTA_RECEIVED,
   QUOTA_FETCH_ERROR,
+  GITLAB_WEBHOOK_TOKEN_FETCH,
+  GITLAB_WEBHOOK_TOKEN_RECEIVED,
+  GITLAB_WEBHOOK_TOKEN_UPDATED,
+  GITLAB_WEBHOOK_TOKEN_FETCH_ERROR,
   WORKFLOWS_FETCH,
   WORKFLOWS_RECEIVED,
   WORKFLOWS_FETCH_ERROR,
@@ -366,6 +370,67 @@ const quota = (state = quotaInitialState, action) => {
   }
 };
 
+const gitlabWebhookTokenInitialState = {
+  phase: "idle",
+  status: null,
+  retryAt: null,
+  activeRequestId: null,
+};
+
+// A single shared status object, kept in sync by every component that
+// fetches or renews it (GitLabProjects's profile-page view, and the global
+// WebhookExpiryWarning banner), so a renewal made from one place is
+// immediately reflected in the other without a separate refetch.
+//
+// The request phase is shared as well as the value: WebhookExpiryWarning is
+// remounted on every page navigation, so a component-local loading flag would
+// permit a second request while the first one is still in flight. Errors keep
+// one absolute retry deadline, preventing remounts from postponing or
+// accelerating the bounded retry.
+const gitlabWebhookToken = (state = gitlabWebhookTokenInitialState, action) => {
+  switch (action.type) {
+    case GITLAB_WEBHOOK_TOKEN_FETCH:
+      return {
+        ...state,
+        phase: "loading",
+        retryAt: null,
+        activeRequestId: action.requestId,
+      };
+    case GITLAB_WEBHOOK_TOKEN_RECEIVED:
+      if (
+        action.requestId !== undefined &&
+        action.requestId !== state.activeRequestId
+      ) {
+        return state;
+      }
+      return {
+        phase: "ready",
+        status: action.status,
+        retryAt: null,
+        activeRequestId: null,
+      };
+    case GITLAB_WEBHOOK_TOKEN_UPDATED:
+      return {
+        phase: "ready",
+        status: action.status,
+        retryAt: null,
+        activeRequestId: null,
+      };
+    case GITLAB_WEBHOOK_TOKEN_FETCH_ERROR:
+      if (action.requestId !== state.activeRequestId) return state;
+      return {
+        ...state,
+        phase: action.retryAt === null ? "error" : "retry_wait",
+        retryAt: action.retryAt,
+        activeRequestId: null,
+      };
+    case USER_SIGNEDOUT:
+      return gitlabWebhookTokenInitialState;
+    default:
+      return state;
+  }
+};
+
 const sharing = (state = sharingInitialState, action) => {
   switch (action.type) {
     case USERS_SHARED_WITH_YOU_RECEIVED:
@@ -408,6 +473,7 @@ const reanaApp = combineReducers({
   details,
   quota,
   sharing,
+  gitlabWebhookToken,
 });
 
 export default reanaApp;

@@ -36,6 +36,7 @@ export const GITLAB_AUTH_URL = `${api}/api/gitlab/connect`;
 export const GITLAB_PROJECTS_URL = (params) =>
   `${api}/api/gitlab/projects?${stringifyQueryParams(params)}`;
 export const GITLAB_WEBHOOK_URL = `${api}/api/gitlab/webhook`;
+export const GITLAB_WEBHOOK_TOKEN_URL = `${api}/api/gitlab/webhook-token`;
 export const WORKFLOWS_URL = (params) =>
   `${api}/api/workflows?verbose=true&${stringifyQueryParams(params)}`;
 export const WORKFLOW_LOGS_URL = (id) => `${api}/api/workflows/${id}/logs`;
@@ -257,6 +258,14 @@ class Client {
 
   toggleGitlabProject(method, data) {
     return this._request(GITLAB_WEBHOOK_URL, { data, method });
+  }
+
+  getGitlabWebhookToken() {
+    return this._request(GITLAB_WEBHOOK_TOKEN_URL);
+  }
+
+  renewGitlabWebhookToken() {
+    return this._request(GITLAB_WEBHOOK_TOKEN_URL, { method: "put" });
   }
 
   getClusterStatus() {

@@ -21,6 +21,10 @@ export const loadingConfig = (state) => state.config.loading;
 // Quota
 export const getUserQuota = (state) => state.quota;
 
+// GitLab webhook authorization
+export const getGitlabWebhookToken = (state) => state.gitlabWebhookToken.status;
+export const getGitlabWebhookTokenRequest = (state) => state.gitlabWebhookToken;
+
 // Auth
 export const isSignedIn = (state) => !!state.auth.email;
 export const getUserEmail = (state) => state.auth.email;
