@@ -35,6 +35,17 @@ test.each([
   ).toBe(true);
 });
 
+test("recognizes the machine-readable terminal-session response", () => {
+  expect(
+    isSessionExpiredError({
+      response: {
+        status: 401,
+        data: { code: "session_terminated", message: "Authentication failed" },
+      },
+    }),
+  ).toBe(true);
+});
+
 test("does not treat an unrelated 401 as session expiry", () => {
   expect(
     isSessionExpiredError({

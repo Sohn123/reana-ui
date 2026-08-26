@@ -15,10 +15,12 @@ import { stringifyQueryParams } from "~/util";
 
 export function isSessionExpiredError(error) {
   const status = error?.response?.status;
+  const code = error?.response?.data?.code;
   const message = (error?.response?.data?.message || "").toLowerCase();
   return (
     status === 401 &&
-    (message.includes("user not signed in") ||
+    (code === "session_terminated" ||
+      message.includes("user not signed in") ||
       message.includes("user not logged in") ||
       message.includes("session expired"))
   );
