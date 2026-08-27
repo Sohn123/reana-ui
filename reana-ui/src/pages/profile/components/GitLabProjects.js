@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Button, List, Loader, Radio, Message, Icon } from "semantic-ui-react";
 
 import {
+  errorActionCreator,
   GITLAB_WEBHOOK_TOKEN_UPDATED,
   loadGitlabWebhookTokenStatus,
 } from "~/actions";
@@ -163,7 +164,7 @@ export default function GitLabProjects() {
           fetchWebhookTokenStatus();
           return;
         }
-        throw new Error(e);
+        dispatch(errorActionCreator(e));
       })
       .finally(() => {
         setToggling(projectId, false);

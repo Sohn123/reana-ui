@@ -260,6 +260,35 @@ test("a 409 on enabling refreshes the status and shows the renewal action", asyn
   );
 });
 
+test.each([
+  [
+    "an API failure",
+    { response: { status: 500, data: { message: "GitLab is unavailable" } } },
+    "GitLab is unavailable",
+    500,
+  ],
+  ["a network failure", new Error("network down"), "network down", undefined],
+])(
+  "%s while toggling is reported and leaves the project retryable",
+  async (_, error, message, status) => {
+    setWebhookStatus(webhookStatus());
+    client.toggleGitlabProject.mockRejectedValue(error);
+
+    renderProjects();
+
+    const toggle = await screen.findByRole("radio");
+    fireEvent.click(toggle);
+
+    await waitFor(() => expect(toggle).toBeEnabled());
+    expect(store.getState().notification).toMatchObject({
+      isError: true,
+      message,
+      status,
+    });
+    expect(client.getGitlabWebhookToken).not.toHaveBeenCalled();
+  },
+);
+
 test("no banner is shown before a webhook secret exists", async () => {
   setWebhookStatus(webhookStatus({ configured: false, expires_at: null }));
 
