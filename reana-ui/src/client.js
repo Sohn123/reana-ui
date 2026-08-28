@@ -13,16 +13,28 @@ import axios from "axios";
 import { api } from "~/config";
 import { stringifyQueryParams } from "~/util";
 
-export function isSessionExpiredError(error) {
+export function isSessionExpiredError(error, requestUrl) {
   const status = error?.response?.status;
+  if (status !== 401) {
+    return false;
+  }
+  // USER_INFO_URL (/api/you) has no meaning other than "who is the signed-in
+  // user" -- any 401 from it means the session is gone, regardless of the
+  // response body an intermediary (a proxy, an ingress) put on it. Other
+  // endpoints can return a 401 about something unrelated to the REANA
+  // session itself (e.g. a linked GitLab token expiring), so those still
+  // need the message/code match to avoid signing the user out of REANA
+  // over an unrelated integration failing.
+  if (requestUrl === USER_INFO_URL) {
+    return true;
+  }
   const code = error?.response?.data?.code;
   const message = (error?.response?.data?.message || "").toLowerCase();
   return (
-    status === 401 &&
-    (code === "session_terminated" ||
-      message.includes("user not signed in") ||
-      message.includes("user not logged in") ||
-      message.includes("session expired"))
+    code === "session_terminated" ||
+    message.includes("user not signed in") ||
+    message.includes("user not logged in") ||
+    message.includes("session expired")
   );
 }
 
@@ -81,11 +93,12 @@ const CSRF_COOKIE = "reana_csrf";
 const CSRF_HEADER = "X-REANA-CSRF";
 
 function getCookieValue(name) {
-  return document.cookie
+  const rawValue = document.cookie
     .split(";")
     .map((cookie) => cookie.trim())
     .find((cookie) => cookie.startsWith(`${name}=`))
     ?.slice(name.length + 1);
+  return rawValue === undefined ? undefined : decodeURIComponent(rawValue);
 }
 
 class Client {
@@ -137,7 +150,7 @@ class Client {
         ...options,
       });
     } catch (error) {
-      if (this._onUnauthorized && isSessionExpiredError(error)) {
+      if (this._onUnauthorized && isSessionExpiredError(error, url)) {
         this._onUnauthorized();
       }
       throw error;

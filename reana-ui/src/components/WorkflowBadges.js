@@ -40,7 +40,18 @@ export default function WorkflowBadges({ workflow, badgeSize = "tiny" }) {
   const handleOpenInteractiveSession = (event) => {
     event.preventDefault();
     const sessionWindow = window.open("", "_blank");
-    if (sessionWindow) sessionWindow.opener = null;
+    if (sessionWindow) {
+      sessionWindow.opener = null;
+      // The target URL isn't known synchronously (it needs the async
+      // secret fetch below), so this can't be a real <a rel="noreferrer">
+      // click like the rest of this file uses. Achieve the same effect by
+      // setting the popup's own referrer policy before navigating it --
+      // it starts as a same-origin about:blank document, so this is safe.
+      const noReferrerMeta = sessionWindow.document.createElement("meta");
+      noReferrerMeta.name = "referrer";
+      noReferrerMeta.content = "no-referrer";
+      sessionWindow.document.head.appendChild(noReferrerMeta);
+    }
 
     client
       .getInteractiveSessionSecret(workflow.id)

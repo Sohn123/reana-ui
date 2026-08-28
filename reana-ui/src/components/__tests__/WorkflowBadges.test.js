@@ -28,10 +28,15 @@ test("fetches the session secret before opening a notebook", async () => {
   jest.spyOn(client, "getInteractiveSessionSecret").mockResolvedValue({
     data: { session_secret: "notebook secret" },
   });
+  const appendedMetaTags = [];
   const sessionWindow = {
     close: jest.fn(),
     location: { href: "" },
     opener: window,
+    document: {
+      createElement: jest.fn(() => ({})),
+      head: { appendChild: jest.fn((el) => appendedMetaTags.push(el)) },
+    },
   };
   jest.spyOn(window, "open").mockReturnValue(sessionWindow);
   const workflow = {
@@ -59,4 +64,10 @@ test("fetches the session secret before opening a notebook", async () => {
     "workflow-id",
   );
   expect(sessionWindow.opener).toBeNull();
+  // A real <a rel="noreferrer"> isn't possible here (the URL isn't known
+  // until the secret fetch above resolves), so referrer suppression is set
+  // on the popup's own document instead, before it navigates away.
+  expect(appendedMetaTags).toEqual([
+    expect.objectContaining({ name: "referrer", content: "no-referrer" }),
+  ]);
 });

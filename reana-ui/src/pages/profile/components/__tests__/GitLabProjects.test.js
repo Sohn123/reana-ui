@@ -177,11 +177,18 @@ test("a failed status request is visible and retryable", async () => {
       /GitLab webhook authorization status is unavailable/i,
     ),
   ).toBeInTheDocument();
-  fireEvent.click(
-    screen.getByRole("button", {
-      name: /retry loading authorization status/i,
-    }),
-  );
+  const retryButton = screen.getByRole("button", {
+    name: /retry loading authorization status/i,
+  });
+  fireEvent.click(retryButton);
+
+  // The banner (and its now-loading button) must stay mounted while the
+  // retry is in flight, not disappear because "loading" fell outside the
+  // block's render condition and reappear only once the retry settles.
+  expect(
+    screen.getByText(/GitLab webhook authorization status is unavailable/i),
+  ).toBeInTheDocument();
+  expect(retryButton).toBeDisabled();
 
   expect(
     await screen.findByText(/GitLab webhook authorization is time-limited/i),
@@ -232,6 +239,24 @@ test("cached authorization becomes expired at its deadline without a refetch", a
   jest.useRealTimers();
 });
 
+test("fetches the webhook status itself when nothing has fetched it yet", async () => {
+  // No setWebhookStatus() and no prior GITLAB_WEBHOOK_TOKEN_FETCH dispatch:
+  // phase is still "idle", as it would be if WebhookExpiryWarning hasn't
+  // mounted anywhere on this page. This component must not depend on that.
+  client.getGitlabWebhookToken.mockResolvedValueOnce({
+    data: webhookStatus(),
+  });
+
+  renderProjects();
+
+  await waitFor(() =>
+    expect(client.getGitlabWebhookToken).toHaveBeenCalledTimes(1),
+  );
+  expect(
+    await screen.findByText(/GitLab webhook authorization is time-limited/i),
+  ).toBeInTheDocument();
+});
+
 test("a 409 on enabling refreshes the status and shows the renewal action", async () => {
   // The authorization looks valid on load, so the toggle is enabled...
   setWebhookStatus(webhookStatus());
@@ -257,6 +282,14 @@ test("a 409 on enabling refreshes the status and shows the renewal action", asyn
   ).toBeInTheDocument();
   await waitFor(() =>
     expect(client.getGitlabWebhookToken).toHaveBeenCalledTimes(1),
+  );
+  // The refetch alone isn't enough: the click that failed needs its own
+  // explanation, not just an unrelated banner appearing elsewhere.
+  await waitFor(() =>
+    expect(store.getState().notification).toMatchObject({
+      isWarning: true,
+      header: expect.stringMatching(/gitlab authorization expired/i),
+    }),
   );
 });
 

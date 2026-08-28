@@ -17,6 +17,7 @@ import {
   errorActionCreator,
   GITLAB_WEBHOOK_TOKEN_UPDATED,
   loadGitlabWebhookTokenStatus,
+  triggerNotification,
 } from "~/actions";
 import client, { GITLAB_AUTH_URL } from "~/client";
 import { Search, Pagination } from "~/components";
@@ -48,6 +49,16 @@ export default function GitLabProjects() {
   const { phase: webhookTokenPhase } = useSelector(
     getGitlabWebhookTokenRequest,
   );
+  // Tracks a user-initiated Retry specifically, as opposed to the very
+  // first, unrelated fetch WebhookExpiryWarning may already have kicked
+  // off elsewhere -- the two share the same phase state, but only a
+  // retry should show this component's own loading feedback.
+  const [retryingWebhookStatus, setRetryingWebhookStatus] = useState(false);
+  useEffect(() => {
+    if (webhookTokenPhase !== "loading") {
+      setRetryingWebhookStatus(false);
+    }
+  }, [webhookTokenPhase]);
   const webhookTokenExpired = webhookAuthorizationIsExpired(
     webhookToken,
     webhookNow,
@@ -61,6 +72,16 @@ export default function GitLabProjects() {
     () => dispatch(loadGitlabWebhookTokenStatus()),
     [dispatch],
   );
+
+  // The webhook-token phase is shared with WebhookExpiryWarning, which
+  // normally kicks off the first fetch -- but this page must not depend on
+  // that component happening to be mounted too, so trigger it here as well
+  // if nothing has fetched yet.
+  useEffect(() => {
+    if (webhookTokenPhase === "idle") {
+      fetchWebhookTokenStatus();
+    }
+  }, [webhookTokenPhase, fetchWebhookTokenStatus]);
 
   useEffect(() => {
     const transitionAt = nextWebhookAuthorizationTransition(
@@ -162,6 +183,14 @@ export default function GitLabProjects() {
         // its action are shown, instead of silently reverting the toggle.
         if (e?.response?.status === 409) {
           fetchWebhookTokenStatus();
+          dispatch(
+            triggerNotification(
+              "GitLab authorization expired",
+              "Your delegated GitLab authorization expired. Renew it below, " +
+                "then try again.",
+              { warning: true },
+            ),
+          );
           return;
         }
         dispatch(errorActionCreator(e));
@@ -232,7 +261,8 @@ export default function GitLabProjects() {
     return (
       <>
         {(webhookTokenPhase === "error" ||
-          webhookTokenPhase === "retry_wait") && (
+          webhookTokenPhase === "retry_wait" ||
+          (webhookTokenPhase === "loading" && retryingWebhookStatus)) && (
           <Message warning>
             <Message.Header>
               GitLab webhook authorization status is unavailable
@@ -240,9 +270,12 @@ export default function GitLabProjects() {
             <p>The GitLab webhook authorization status could not be loaded.</p>
             <Button
               type="button"
-              loading={webhookTokenPhase === "loading"}
-              disabled={webhookTokenPhase === "loading"}
-              onClick={fetchWebhookTokenStatus}
+              loading={retryingWebhookStatus}
+              disabled={retryingWebhookStatus}
+              onClick={() => {
+                setRetryingWebhookStatus(true);
+                fetchWebhookTokenStatus();
+              }}
             >
               Retry loading authorization status
             </Button>
